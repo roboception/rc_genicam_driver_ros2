@@ -61,6 +61,7 @@ stages:
 .upload_deb:
   stage: upload
   before_script:
+     - apt-get update -yq && apt-get install -y curl lsb-release file
      - export DISTRO_CODENAME=`lsb_release -cs` && echo Using distro $DISTRO_CODENAME
   script:
     - if [ -z "$APT_REPO" ]; then export APT_REPO=testing; fi

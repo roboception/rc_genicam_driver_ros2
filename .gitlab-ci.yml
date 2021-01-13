@@ -25,7 +25,13 @@ stages:
 # Templates using anchors
 #########################
 .amd64_eloquent_t: &amd64_eloquent_job
-  image: ros:eloquent-ros-base-bionic
+  image: ros:foxy-ros-base-focal
+  tags:
+    - amd64
+    - docker
+
+.amd64_foxy_t: &amd64_foxy_job
+  image: ros:foxy-ros-base-focal
   tags:
     - amd64
     - docker
@@ -92,8 +98,16 @@ driver:eloquent:amd64:
   <<: *amd64_eloquent_job
   extends: .build_driver_testing
 
+driver:foxy:amd64:
+  <<: *amd64_foxy_job
+  extends: .build_driver_testing
+
 driver_stable:eloquent:amd64:
   <<: *amd64_eloquent_job
+  extends: .build_driver
+
+driver_stable:foxy:amd64:
+  <<: *amd64_foxy_job
   extends: .build_driver
 
 # upload packages for master and tags
@@ -103,7 +117,17 @@ upload_testing:bionic:
   dependencies:
     - driver:eloquent:amd64
 
+upload_testing:focal:
+  extends: .upload_deb_testing
+  dependencies:
+    - driver:foxy:amd64
+
 upload_stable:bionic:
   extends: .upload_deb_stable
   dependencies:
     - driver_stable:eloquent:amd64
+
+upload_stable:focal:
+  extends: .upload_deb_stable
+  dependencies:
+    - driver_stable:foxy:amd64

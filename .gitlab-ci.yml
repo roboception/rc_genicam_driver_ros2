@@ -25,7 +25,7 @@ stages:
 # Templates using anchors
 #########################
 .amd64_eloquent_t: &amd64_eloquent_job
-  image: ros:foxy-ros-base-focal
+  image: ros:eloquent-ros-base-bionic
   tags:
     - amd64
     - docker
@@ -60,7 +60,6 @@ stages:
 
 .upload_deb:
   stage: upload
-  image: registry.roboception.de/tools/docker_images:bionic-buildimage
   before_script:
      - export DISTRO_CODENAME=`lsb_release -cs` && echo Using distro $DISTRO_CODENAME
   script:
@@ -113,21 +112,25 @@ driver_stable:foxy:amd64:
 # upload packages for master and tags
 #####################################
 upload_testing:bionic:
+  <<: *amd64_eloquent_job
   extends: .upload_deb_testing
   dependencies:
     - driver:eloquent:amd64
 
 upload_testing:focal:
+  <<: *amd64_foxy_job
   extends: .upload_deb_testing
   dependencies:
     - driver:foxy:amd64
 
 upload_stable:bionic:
+  <<: *amd64_eloquent_job
   extends: .upload_deb_stable
   dependencies:
     - driver_stable:eloquent:amd64
 
 upload_stable:focal:
+  <<: *amd64_foxy_job
   extends: .upload_deb_stable
   dependencies:
     - driver_stable:foxy:amd64

@@ -16,6 +16,7 @@
   <depend>diagnostic_updater</depend>
   <depend>image_transport</depend>
   <depend>rc_common_msgs</depend>
+  <depend>rc_genicam_api</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

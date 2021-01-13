@@ -13,7 +13,7 @@ default:
   - curl http://apt.roboception.de/archive.key | apt-key add -
   - apt-get update -yq
   - apt-get install -y ros-${ROS_DISTRO}-rc-common-msgs rc-genicam-api
-  - rosdep install --from-paths . --ignore-src -r -y
+  - rosdep install --from-paths . --ignore-src -r -y --skip-keys="rc_genicam_api"
   - export CMAKE_PREFIX_PATH="/opt/ros/$ROS_DISTRO"
 
 stages:

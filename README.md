@@ -290,3 +290,12 @@ Launching
   Note that in this setup all frame_ids in all ros messages will be prefixed
   with `my_visard`, e.g., the frame_id of the published camera images will
   be `my_visard_camera`.
+
+Acknowledgements
+----------------
+
+This FTP (Focused Technical Project) has received funding from the European Union’s Horizon 2020 research and innovation programme under the project ROSIN with the grant agreement No 732287.
+
+ROSIN: ROS-Industrial Quality-Assured Robot Software Components: http://rosin-project.eu
+
+![EU flag](rosin_eu_flag.jpg) ![ROSIN logo](rosin_ack_logo_wide.png)

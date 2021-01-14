@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(rc_genicam_driver_ros2)
+project(rc_genicam_driver)
 
 include(cmake/project_version.cmake)
 
@@ -95,5 +95,5 @@ ament_package()
 ## Define information for packaging ##
 ######################################
 # optionally specify dependencies of the debian package here (comma separated!)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "rc-genicam-api (>= 2.4.4) | ros-$ENV{ROS_DISTRO}-rc-genicam-api (>= 2.4.4)")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "ros-$ENV{ROS_DISTRO}-rc-common-msgs, rc-genicam-api (>= 2.4.4) | ros-$ENV{ROS_DISTRO}-rc-genicam-api (>= 2.4.4)")
 include(cmake/package_debian.cmake)

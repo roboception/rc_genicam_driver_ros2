@@ -277,15 +277,15 @@ Launching
 
 * Run as node using command line parameters:
   ```bash
-  ros2 run rc_genicam_driver_ros2 rc_genicam_driver --ros-args -p "device:=:02912345"
+  ros2 run rc_genicam_driver rc_genicam_driver --ros-args -p "device:=:02912345"
   ```
 * Run as component with command line parameters:
   ```bash
-  ros2 component standalone rc_genicam_driver_ros2 rc::GenICamDriver -p "device:=:02912345"
+  ros2 component standalone rc_genicam_driver rc::GenICamDriver -p "device:=:02912345"
   ```
 * In a separate **namespace**:
   ```bash
-  run rc_genicam_driver_ros2 rc_genicam_driver --ros-args -p "device:=:02912345" -r __ns:=/my_visard
+  run rc_genicam_driver rc_genicam_driver --ros-args -p "device:=:02912345" -r __ns:=/my_visard
   ```
   Note that in this setup all frame_ids in all ros messages will be prefixed
   with `my_visard`, e.g., the frame_id of the published camera images will

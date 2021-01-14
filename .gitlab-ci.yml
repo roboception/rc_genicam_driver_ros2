@@ -5,7 +5,7 @@ variables:
 default:
   before_script:
   - export DEBIAN_FRONTEND=noninteractive
-  - apt-get update -yq && apt-get install -y curl file git linitian lsb-release
+  - apt-get update -yq && apt-get install -y curl file git lintian lsb-release
   - export DISTRO_CODENAME=`lsb_release -cs` && echo Using distro $DISTRO_CODENAME
   - echo Using ROS_DISTRO $ROS_DISTRO
   - echo "deb http://apt.roboception.de/stable $DISTRO_CODENAME main" > /etc/apt/sources.list.d/roboception-stable.list

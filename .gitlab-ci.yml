@@ -12,6 +12,7 @@ default:
   - if [ "$TESTING_DEBS" = "true" ]; then echo "deb http://apt.roboception.de/testing $DISTRO_CODENAME main" > /etc/apt/sources.list.d/roboception-testing.list ; fi
   - curl -fsSL http://apt.roboception.de/archive.key | apt-key add -
   - apt-get update -yq
+  - if [ "$ROS_DISTO" = "rolling" ]; then apt-get upgrade; fi
   - apt-get install -y ros-${ROS_DISTRO}-rc-common-msgs rc-genicam-api
   - rosdep install --from-paths . --ignore-src -r -y --skip-keys="rc_genicam_api"
   - export CMAKE_PREFIX_PATH="/opt/ros/$ROS_DISTRO"

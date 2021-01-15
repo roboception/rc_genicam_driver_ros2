@@ -45,21 +45,19 @@ namespace rc
 
 class DepthPublisher : public GenICam2RosPublisher
 {
-  public:
+public:
+  DepthPublisher(rclcpp::Node * node, const std::string & frame_id);
 
-    DepthPublisher(rclcpp::Node *node, const std::string& frame_id);
+  bool used() override;
+  void requiresComponents(int & components, bool & color) override;
 
-    bool used() override;
-    void requiresComponents(int& components, bool& color) override;
+  void publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat) override;
 
-    void publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat) override;
+private:
+  DepthPublisher(const DepthPublisher &);              // forbidden
+  DepthPublisher & operator=(const DepthPublisher &);  // forbidden
 
-  private:
-
-    DepthPublisher(const DepthPublisher&);             // forbidden
-    DepthPublisher& operator=(const DepthPublisher&);  // forbidden
-
-    image_transport::Publisher pub;
+  image_transport::Publisher pub;
 };
 
 }  // namespace rc

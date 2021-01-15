@@ -43,8 +43,8 @@
 namespace rc
 {
 
-DisparityColorPublisher::DisparityColorPublisher(rclcpp::Node *node, const std::string& frame_id)
-  : GenICam2RosPublisher(frame_id)
+DisparityColorPublisher::DisparityColorPublisher(rclcpp::Node * node, const std::string & frame_id)
+: GenICam2RosPublisher(frame_id)
 {
   pub = image_transport::create_publisher(node, "stereo/disparity_color");
 }
@@ -54,18 +54,18 @@ bool DisparityColorPublisher::used()
   return pub.getNumSubscribers() > 0;
 }
 
-void DisparityColorPublisher::requiresComponents(int& components, bool&)
+void DisparityColorPublisher::requiresComponents(int & components, bool &)
 {
-  if (pub.getNumSubscribers() > 0)
-  {
+  if (pub.getNumSubscribers() > 0) {
     components |= ComponentDisparity;
   }
 }
 
-void DisparityColorPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat)
+void DisparityColorPublisher::publish(
+  const rcg::Buffer * buffer, uint32_t part,
+  uint64_t pixelformat)
 {
-  if (nodemap && pub.getNumSubscribers() > 0 && pixelformat == Coord3D_C16)
-  {
+  if (nodemap && pub.getNumSubscribers() > 0 && pixelformat == Coord3D_C16) {
     // create image and initialize header
 
     std::shared_ptr<sensor_msgs::msg::Image> im = std::make_shared<sensor_msgs::msg::Image>();
@@ -85,7 +85,7 @@ void DisparityColorPublisher::publish(const rcg::Buffer* buffer, uint32_t part, 
     // get pointer to image data in buffer
 
     size_t px = buffer->getXPadding(part);
-    const uint8_t* ps = static_cast<const uint8_t*>(buffer->getBase(part));
+    const uint8_t * ps = static_cast<const uint8_t *>(buffer->getBase(part));
 
     // get disparity range
 
@@ -97,14 +97,14 @@ void DisparityColorPublisher::publish(const rcg::Buffer* buffer, uint32_t part, 
     float scale = rcg::getFloat(nodemap, "ChunkScan3dCoordinateScale", 0, 0, true);
 
     double mindepth = rcg::getFloat(nodemap, "DepthMinDepth", 0, 0, true);
-    mindepth = std::max(mindepth, 2.5*t);
+    mindepth = std::max(mindepth, 2.5 * t);
 
     double maxdepth = rcg::getFloat(nodemap, "DepthMaxDepth", 0, 0, true);
     maxdepth = std::max(mindepth, maxdepth);
 
-    int dmin=static_cast<int>(std::floor(f*t/maxdepth));
-    int dmax=static_cast<int>(std::ceil(f*t/mindepth));
-    int drange=dmax-dmin+1;
+    int dmin = static_cast<int>(std::floor(f * t / maxdepth));
+    int dmax = static_cast<int>(std::ceil(f * t / mindepth));
+    int drange = dmax - dmin + 1;
 
     // convert image data
 
@@ -112,27 +112,21 @@ void DisparityColorPublisher::publish(const rcg::Buffer* buffer, uint32_t part, 
     im->step = 3 * im->width * sizeof(uint8_t);
 
     im->data.resize(im->step * im->height);
-    uint8_t* pt = reinterpret_cast<uint8_t*>(&im->data[0]);
+    uint8_t * pt = reinterpret_cast<uint8_t *>(&im->data[0]);
 
-    for (uint32_t k = 0; k < im->height; k++)
-    {
-      for (uint32_t i = 0; i < im->width; i++)
-      {
+    for (uint32_t k = 0; k < im->height; k++) {
+      for (uint32_t i = 0; i < im->width; i++) {
         uint16_t d;
 
-        if (bigendian)
-        {
+        if (bigendian) {
           d = (ps[0] << 8) | ps[1];
-        }
-        else
-        {
+        } else {
           d = (ps[1] << 8) | ps[0];
         }
 
         ps += 2;
 
-        if (d != 0)
-        {
+        if (d != 0) {
           double v = (scale * d - dmin) / drange;
           v = v / 1.15 + 0.1;
 
@@ -143,9 +137,7 @@ void DisparityColorPublisher::publish(const rcg::Buffer* buffer, uint32_t part, 
           *pt++ = 255 * r + 0.5;
           *pt++ = 255 * g + 0.5;
           *pt++ = 255 * b + 0.5;
-        }
-        else
-        {
+        } else {
           *pt++ = 0;
           *pt++ = 0;
           *pt++ = 0;

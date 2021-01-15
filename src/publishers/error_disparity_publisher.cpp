@@ -40,8 +40,8 @@
 
 namespace rc
 {
-ErrorDisparityPublisher::ErrorDisparityPublisher(rclcpp::Node *node, const std::string& frame_id)
-  : GenICam2RosPublisher(frame_id)
+ErrorDisparityPublisher::ErrorDisparityPublisher(rclcpp::Node * node, const std::string & frame_id)
+: GenICam2RosPublisher(frame_id)
 {
   pub = image_transport::create_publisher(node, "stereo/error_disparity");
 }
@@ -51,18 +51,18 @@ bool ErrorDisparityPublisher::used()
   return pub.getNumSubscribers() > 0;
 }
 
-void ErrorDisparityPublisher::requiresComponents(int& components, bool&)
+void ErrorDisparityPublisher::requiresComponents(int & components, bool &)
 {
-  if (pub.getNumSubscribers() > 0)
-  {
+  if (pub.getNumSubscribers() > 0) {
     components |= ComponentError;
   }
 }
 
-void ErrorDisparityPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat)
+void ErrorDisparityPublisher::publish(
+  const rcg::Buffer * buffer, uint32_t part,
+  uint64_t pixelformat)
 {
-  if (nodemap && pub.getNumSubscribers() > 0 && pixelformat == Error8)
-  {
+  if (nodemap && pub.getNumSubscribers() > 0 && pixelformat == Error8) {
     // create image and initialize header
 
     std::shared_ptr<sensor_msgs::msg::Image> im = std::make_shared<sensor_msgs::msg::Image>();
@@ -81,7 +81,7 @@ void ErrorDisparityPublisher::publish(const rcg::Buffer* buffer, uint32_t part, 
     // get pointer to image data in buffer
 
     size_t px = buffer->getXPadding(part);
-    const uint8_t* ps = static_cast<const uint8_t*>(buffer->getBase(part));
+    const uint8_t * ps = static_cast<const uint8_t *>(buffer->getBase(part));
 
     // convert image data
 
@@ -93,12 +93,10 @@ void ErrorDisparityPublisher::publish(const rcg::Buffer* buffer, uint32_t part, 
     float scale = rcg::getFloat(nodemap, "ChunkScan3dCoordinateScale", 0, 0, true);
 
     im->data.resize(im->step * im->height);
-    float* pt = reinterpret_cast<float*>(&im->data[0]);
+    float * pt = reinterpret_cast<float *>(&im->data[0]);
 
-    for (uint32_t k = 0; k < im->height; k++)
-    {
-      for (uint32_t i = 0; i < im->width; i++)
-      {
+    for (uint32_t k = 0; k < im->height; k++) {
+      for (uint32_t i = 0; i < im->width; i++) {
         *pt++ = scale * *ps++;
       }
 

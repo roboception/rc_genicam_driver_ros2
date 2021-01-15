@@ -45,21 +45,19 @@ namespace rc
 
 class DisparityColorPublisher : public GenICam2RosPublisher
 {
-  public:
+public:
+  DisparityColorPublisher(rclcpp::Node * node, const std::string & frame_id);
 
-    DisparityColorPublisher(rclcpp::Node *node, const std::string& frame_id);
+  bool used() override;
+  void requiresComponents(int & components, bool & color) override;
 
-    bool used() override;
-    void requiresComponents(int& components, bool& color) override;
+  void publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat) override;
 
-    void publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat) override;
+private:
+  DisparityColorPublisher(const DisparityColorPublisher &);              // forbidden
+  DisparityColorPublisher & operator=(const DisparityColorPublisher &);  // forbidden
 
-  private:
-
-    DisparityColorPublisher(const DisparityColorPublisher&);             // forbidden
-    DisparityColorPublisher& operator=(const DisparityColorPublisher&);  // forbidden
-
-    image_transport::Publisher pub;
+  image_transport::Publisher pub;
 };
 
 }  // namespace rc

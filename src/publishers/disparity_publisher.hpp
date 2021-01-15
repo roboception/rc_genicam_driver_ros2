@@ -46,23 +46,21 @@ namespace rc
 
 class DisparityPublisher : public GenICam2RosPublisher
 {
-  public:
+public:
+  DisparityPublisher(rclcpp::Node * node, const std::string & frame_id);
 
-    DisparityPublisher(rclcpp::Node *node, const std::string& frame_id);
+  void setDisprange(int disprange);
 
-    void setDisprange(int disprange);
+  bool used() override;
+  void requiresComponents(int & components, bool & color) override;
 
-    bool used() override;
-    void requiresComponents(int& components, bool& color) override;
+  void publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat) override;
 
-    void publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat) override;
+private:
+  DisparityPublisher(const DisparityPublisher &);              // forbidden
+  DisparityPublisher & operator=(const DisparityPublisher &);  // forbidden
 
-  private:
-
-    DisparityPublisher(const DisparityPublisher&);             // forbidden
-    DisparityPublisher& operator=(const DisparityPublisher&);  // forbidden
-
-    std::shared_ptr<rclcpp::Publisher<stereo_msgs::msg::DisparityImage> > pub;
+  std::shared_ptr<rclcpp::Publisher<stereo_msgs::msg::DisparityImage>> pub;
 };
 
 }  // namespace rc

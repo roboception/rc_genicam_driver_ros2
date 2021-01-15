@@ -41,8 +41,8 @@
 namespace rc
 {
 
-DepthPublisher::DepthPublisher(rclcpp::Node *node, const std::string& frame_id)
-  : GenICam2RosPublisher(frame_id)
+DepthPublisher::DepthPublisher(rclcpp::Node * node, const std::string & frame_id)
+: GenICam2RosPublisher(frame_id)
 {
   pub = image_transport::create_publisher(node, "stereo/depth");
 }
@@ -52,18 +52,16 @@ bool DepthPublisher::used()
   return pub.getNumSubscribers() > 0;
 }
 
-void DepthPublisher::requiresComponents(int& components, bool&)
+void DepthPublisher::requiresComponents(int & components, bool &)
 {
-  if (pub.getNumSubscribers() > 0)
-  {
+  if (pub.getNumSubscribers() > 0) {
     components |= ComponentDisparity;
   }
 }
 
-void DepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat)
+void DepthPublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat)
 {
-  if (nodemap && pub.getNumSubscribers() > 0 && pixelformat == Coord3D_C16)
-  {
+  if (nodemap && pub.getNumSubscribers() > 0 && pixelformat == Coord3D_C16) {
     // create image and initialize header
 
     std::shared_ptr<sensor_msgs::msg::Image> im = std::make_shared<sensor_msgs::msg::Image>();
@@ -82,7 +80,7 @@ void DepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t 
     // get pointer to image data in buffer
 
     size_t px = buffer->getXPadding(part);
-    const uint8_t* ps = static_cast<const uint8_t*>(buffer->getBase(part));
+    const uint8_t * ps = static_cast<const uint8_t *>(buffer->getBase(part));
 
     // convert image data
 
@@ -91,7 +89,7 @@ void DepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t 
     im->step = im->width * sizeof(float);
 
     im->data.resize(im->step * im->height);
-    float* pt = reinterpret_cast<float*>(&im->data[0]);
+    float * pt = reinterpret_cast<float *>(&im->data[0]);
 
     bool bigendian = buffer->isBigEndian();
 
@@ -100,8 +98,7 @@ void DepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t 
     double t = rcg::getFloat(nodemap, "ChunkScan3dBaseline", 0, 0, true);
 
     float invalid = -1;
-    if (rcg::getBoolean(nodemap, "ChunkScan3dInvalidDataFlag", false))
-    {
+    if (rcg::getBoolean(nodemap, "ChunkScan3dInvalidDataFlag", false)) {
       invalid = rcg::getFloat(nodemap, "ChunkScan3dInvalidDataValue", 0, 0, true);
     }
 
@@ -109,29 +106,21 @@ void DepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t 
 
     float s = f * t / scale;
 
-    for (uint32_t k = 0; k < im->height; k++)
-    {
-      for (uint32_t i = 0; i < im->width; i++)
-      {
+    for (uint32_t k = 0; k < im->height; k++) {
+      for (uint32_t i = 0; i < im->width; i++) {
         uint16_t d;
 
-        if (bigendian)
-        {
+        if (bigendian) {
           d = (ps[0] << 8) | ps[1];
-        }
-        else
-        {
+        } else {
           d = (ps[1] << 8) | ps[0];
         }
 
         ps += 2;
 
-        if (d != 0 && d != invalid)
-        {
+        if (d != 0 && d != invalid) {
           *pt++ = s / d;
-        }
-        else
-        {
+        } else {
           *pt++ = std::numeric_limits<float>::quiet_NaN();
         }
       }

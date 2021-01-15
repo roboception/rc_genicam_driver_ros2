@@ -46,31 +46,29 @@ namespace rc
 
 class CameraInfoPublisher : public GenICam2RosPublisher
 {
-  public:
+public:
+  /**
+    Initialization of publisher.
 
-    /**
-      Initialization of publisher.
+    @param nh   Node handle.
+    @param left True for left and false for right camera.
+  */
 
-      @param nh   Node handle.
-      @param left True for left and false for right camera.
-    */
+  CameraInfoPublisher(rclcpp::Node * node, const std::string & frame_id, bool left);
 
-    CameraInfoPublisher(rclcpp::Node *node, const std::string& frame_id, bool left);
+  bool used() override;
+  void requiresComponents(int & components, bool & color) override;
 
-    bool used() override;
-    void requiresComponents(int& components, bool& color) override;
+  void publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat) override;
 
-    void publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat) override;
+private:
+  CameraInfoPublisher(const CameraInfoPublisher &);              // forbidden
+  CameraInfoPublisher & operator=(const CameraInfoPublisher &);  // forbidden
 
-  private:
+  bool left;
+  sensor_msgs::msg::CameraInfo info;
 
-    CameraInfoPublisher(const CameraInfoPublisher&);             // forbidden
-    CameraInfoPublisher& operator=(const CameraInfoPublisher&);  // forbidden
-
-    bool left;
-    sensor_msgs::msg::CameraInfo info;
-
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo> > pub;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> pub;
 };
 
 }  // namespace rc

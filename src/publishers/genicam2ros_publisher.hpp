@@ -48,86 +48,85 @@ namespace rc
 
 class GenICam2RosPublisher
 {
-  public:
-    /*
-      Flags for components to be enabled.
-    */
+public:
+  /*
+    Flags for components to be enabled.
+  */
 
-    const static int ComponentIntensity = 1;
-    const static int ComponentIntensityCombined = 2;
-    const static int ComponentDisparity = 4;
-    const static int ComponentConfidence = 8;
-    const static int ComponentError = 16;
+  const static int ComponentIntensity = 1;
+  const static int ComponentIntensityCombined = 2;
+  const static int ComponentDisparity = 4;
+  const static int ComponentConfidence = 8;
+  const static int ComponentError = 16;
 
-    /**
-     * @param frame_id_prefix prefix for frame ids in published ros messages
-     */
+  /**
+   * @param frame_id_prefix prefix for frame ids in published ros messages
+   */
 
-    GenICam2RosPublisher(const std::string& _frame_id) : frame_id(_frame_id)
-    {}
+  GenICam2RosPublisher(const std::string & _frame_id)
+  : frame_id(_frame_id)
+  {}
 
-    virtual ~GenICam2RosPublisher()
-    {}
+  virtual ~GenICam2RosPublisher()
+  {}
 
-    /**
-      Set nodemap to be used.
-    */
+  /**
+    Set nodemap to be used.
+  */
 
-    void setNodemap(const std::shared_ptr<GenApi::CNodeMapRef>& _nodemap)
-    {
-      nodemap = _nodemap;
-    }
+  void setNodemap(const std::shared_ptr<GenApi::CNodeMapRef> & _nodemap)
+  {
+    nodemap = _nodemap;
+  }
 
-    /**
-      Clear nodemap.
-    */
+  /**
+    Clear nodemap.
+  */
 
-    void clearNodemap()
-    {
-      nodemap.reset();
-    }
+  void clearNodemap()
+  {
+    nodemap.reset();
+  }
 
-    /**
-      Offers a buffer for publication. It depends on the the kind of buffer
-      data and the implementation and configuration of the sub-class if the
-      data is published.
+  /**
+    Offers a buffer for publication. It depends on the the kind of buffer
+    data and the implementation and configuration of the sub-class if the
+    data is published.
 
-      @param buffer      Buffer with data to be published. The buffer is
-                         already attached to the nodemap for accessing the
-                         chunk data.
-      @param part        Part index of image.
-      @param pixelformat The pixelformat as given by buffer->getPixelFormat(part).
-    */
+    @param buffer      Buffer with data to be published. The buffer is
+                       already attached to the nodemap for accessing the
+                       chunk data.
+    @param part        Part index of image.
+    @param pixelformat The pixelformat as given by buffer->getPixelFormat(part).
+  */
 
-    virtual void publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat) = 0;
+  virtual void publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat) = 0;
 
-    /**
-      Returns true if there are subscribers to the topic.
+  /**
+    Returns true if there are subscribers to the topic.
 
-      @return True if there are subscribers.
-    */
+    @return True if there are subscribers.
+  */
 
-    virtual bool used() = 0;
+  virtual bool used() = 0;
 
-    /**
-      Adds components and if color images are required to the given values.
-      Nothing will be changed if there are no subscribers, i.e. used() == false.
+  /**
+    Adds components and if color images are required to the given values.
+    Nothing will be changed if there are no subscribers, i.e. used() == false.
 
-      @param components Components Flags that will be updated according to the
-                        needs of this publisher.
-      @param color      Value that will be updated if this publisher needs color.
-    */
+    @param components Components Flags that will be updated according to the
+                      needs of this publisher.
+    @param color      Value that will be updated if this publisher needs color.
+  */
 
-    virtual void requiresComponents(int& components, bool& color) = 0;
+  virtual void requiresComponents(int & components, bool & color) = 0;
 
-  protected:
+protected:
+  std::string frame_id;
+  std::shared_ptr<GenApi::CNodeMapRef> nodemap;
 
-    std::string frame_id;
-    std::shared_ptr<GenApi::CNodeMapRef> nodemap;
-
-  private:
-
-    GenICam2RosPublisher& operator=(const GenICam2RosPublisher&);  // forbidden
+private:
+  GenICam2RosPublisher & operator=(const GenICam2RosPublisher &);  // forbidden
 };
 
 }  // namespace rc

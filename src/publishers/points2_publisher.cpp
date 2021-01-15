@@ -41,8 +41,8 @@
 namespace rc
 {
 
-Points2Publisher::Points2Publisher(rclcpp::Node *_node, const std::string& frame_id)
-  : GenICam2RosPublisher(frame_id), left_list(75)
+Points2Publisher::Points2Publisher(rclcpp::Node * _node, const std::string & frame_id)
+: GenICam2RosPublisher(frame_id), left_list(75)
 {
   f = 0;
   t = 0;
@@ -58,30 +58,24 @@ bool Points2Publisher::used()
   return pub->get_subscription_count() > 0;
 }
 
-void Points2Publisher::requiresComponents(int& components, bool&)
+void Points2Publisher::requiresComponents(int & components, bool &)
 {
-  if (pub->get_subscription_count() > 0)
-  {
+  if (pub->get_subscription_count() > 0) {
     components |= ComponentIntensity | ComponentDisparity;
   }
 }
 
-void Points2Publisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat)
+void Points2Publisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat)
 {
-  if (nodemap)
-  {
-    if (pub->get_subscription_count() > 0)
-    {
+  if (nodemap) {
+    if (pub->get_subscription_count() > 0) {
       rcg::setEnum(nodemap, "ChunkLineSelector", "Out1", true);
       std::string out1_mode = rcg::getEnum(nodemap, "ChunkLineSource", true);
       uint64_t tolerance_ns;
 
-      if (out1_mode == "ExposureAlternateActive")
-      {
+      if (out1_mode == "ExposureAlternateActive") {
         tolerance_ns = static_cast<uint64_t>(0.050 * 1000000000ull);
-      }
-      else
-      {
+      } else {
         tolerance_ns = 0;
       }
 
@@ -89,20 +83,16 @@ void Points2Publisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_
 
       // buffer left and disparity images
 
-      if (pixelformat == Mono8 || pixelformat == YCbCr411_8)
-      {
+      if (pixelformat == Mono8 || pixelformat == YCbCr411_8) {
         // in alternate exposure mode, skip images for texture with out1 == true,
         // i.e. with projected pattern
 
-        if (tolerance_ns > 0 && out1)
-        {
+        if (tolerance_ns > 0 && out1) {
           return;
         }
 
         left_list.add(buffer, part);
-      }
-      else if (pixelformat == Coord3D_C16)
-      {
+      } else if (pixelformat == Coord3D_C16) {
         disp_list.add(buffer, part);
 
         rcg::setEnum(nodemap, "ChunkComponentSelector", "Disparity", true);
@@ -110,8 +100,7 @@ void Points2Publisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_
         t = rcg::getFloat(nodemap, "ChunkScan3dBaseline", 0, 0, true);
 
         invalid = -1;
-        if (rcg::getBoolean(nodemap, "ChunkScan3dInvalidDataFlag", false))
-        {
+        if (rcg::getBoolean(nodemap, "ChunkScan3dInvalidDataFlag", false)) {
           invalid = rcg::getFloat(nodemap, "ChunkScan3dInvalidDataValue", 0, 0, true);
         }
 
@@ -127,30 +116,27 @@ void Points2Publisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_
 
       // print warning with reason if no left image can be found for disparity image
 
-      if (pixelformat == Coord3D_C16 && !left)
-      {
+      if (pixelformat == Coord3D_C16 && !left) {
         RCLCPP_WARN(node->get_logger(), "Cannot find left image for disparity image.");
       }
 
-      if (left && disp)
-      {
+      if (left && disp) {
         // determine integer factor between size of left and disparity image
 
         uint32_t lw = left->getWidth();
         uint32_t lh = left->getHeight();
 
-        if (lh > lw)  // there may be a stacked right image
-        {
+        if (lh > lw) { // there may be a stacked right image
           lh >>= 1;
         }
 
         int ds = (lw + disp->getWidth() - 1) / disp->getWidth();
 
-        if ((lw + ds - 1) / ds == disp->getWidth() && (lh + ds - 1) / ds == disp->getHeight())
-        {
+        if ((lw + ds - 1) / ds == disp->getWidth() && (lh + ds - 1) / ds == disp->getHeight()) {
           // allocate new image message and set meta information
 
-          std::unique_ptr<sensor_msgs::msg::PointCloud2> p = std::make_unique<sensor_msgs::msg::PointCloud2>();
+          std::unique_ptr<sensor_msgs::msg::PointCloud2> p =
+            std::make_unique<sensor_msgs::msg::PointCloud2>();
 
           p->header.stamp.sec = timestamp / 1000000000ul;
           p->header.stamp.nanosec = timestamp % 1000000000ul;
@@ -188,40 +174,34 @@ void Points2Publisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_
           // allocate memory
 
           p->data.resize(p->row_step * p->height);
-          float* pd = reinterpret_cast<float*>(&p->data[0]);
+          float * pd = reinterpret_cast<float *>(&p->data[0]);
 
           // pointer to disparity data
 
-          const uint8_t* dps = disp->getPixels();
+          const uint8_t * dps = disp->getPixels();
           size_t dstep = disp->getWidth() * sizeof(uint16_t) + disp->getXPadding();
 
           // convert disparity to point cloud using left image for texture
 
           bool bigendian = disp->isBigEndian();
 
-          for (uint32_t k = 0; k < p->height; k++)
-          {
-            for (uint32_t i = 0; i < p->width; i++)
-            {
+          for (uint32_t k = 0; k < p->height; k++) {
+            for (uint32_t i = 0; i < p->width; i++) {
               // get disparity
 
               uint32_t j = i << 1;
 
               float d;
 
-              if (bigendian)
-              {
+              if (bigendian) {
                 d = scale * ((dps[j] << 8) | dps[j + 1]);
-              }
-              else
-              {
+              } else {
                 d = scale * ((dps[j + 1] << 8) | dps[j]);
               }
 
               // if disparity is valid and color can be obtained
 
-              if (d > 0 && d != invalid)
-              {
+              if (d > 0 && d != invalid) {
                 // reconstruct 3D point
 
                 pd[0] = (i + 0.5 - disp->getWidth() / 2.0) * t / d;
@@ -233,17 +213,14 @@ void Points2Publisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_
                 uint8_t rgb[3];
                 rcg::getColor(rgb, left, ds, i, k);
 
-                uint8_t* bgra = reinterpret_cast<uint8_t*>(pd + 3);
+                uint8_t * bgra = reinterpret_cast<uint8_t *>(pd + 3);
 
                 bgra[0] = rgb[2];
                 bgra[1] = rgb[1];
                 bgra[2] = rgb[0];
                 bgra[3] = 0;
-              }
-              else
-              {
-                for (int i = 0; i < 4; i++)
-                {
+              } else {
+                for (int i = 0; i < 4; i++) {
                   pd[i] = std::numeric_limits<float>::quiet_NaN();
                 }
               }
@@ -257,12 +234,11 @@ void Points2Publisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_
           // publish message
 
           pub->publish(std::move(p));
-        }
-        else
-        {
-          RCLCPP_ERROR_STREAM(node->get_logger(), "Size of left and disparity image must differ only by an integer factor: "
-            << left->getWidth() << "x" << left->getHeight() << " != " << disp->getWidth() << "x"
-            << disp->getHeight());
+        } else {
+          RCLCPP_ERROR_STREAM(
+            node->get_logger(), "Size of left and disparity image must differ only by an integer factor: " <<
+              left->getWidth() << "x" << left->getHeight() << " != " << disp->getWidth() << "x" <<
+              disp->getHeight());
         }
 
         // remove all old images, including the current ones

@@ -45,27 +45,26 @@ namespace rc
 
 class ImagePublisher : public GenICam2RosPublisher
 {
-  public:
+public:
+  ImagePublisher(
+    rclcpp::Node * node, const std::string & frame_id, bool left, bool color,
+    bool out1_filter);
 
-    ImagePublisher(rclcpp::Node *node, const std::string& frame_id, bool left, bool color,
-                   bool out1_filter);
+  bool used() override;
+  void requiresComponents(int & components, bool & color) override;
 
-    bool used() override;
-    void requiresComponents(int& components, bool& color) override;
+  void publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat) override;
 
-    void publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat) override;
+private:
+  ImagePublisher(const ImagePublisher &);              // forbidden
+  ImagePublisher & operator=(const ImagePublisher &);  // forbidden
 
-  private:
+  bool left;
+  bool color;
 
-    ImagePublisher(const ImagePublisher&);             // forbidden
-    ImagePublisher& operator=(const ImagePublisher&);  // forbidden
-
-    bool left;
-    bool color;
-
-    image_transport::Publisher pub;
-    image_transport::Publisher pub_out1_low;
-    image_transport::Publisher pub_out1_high;
+  image_transport::Publisher pub;
+  image_transport::Publisher pub_out1_low;
+  image_transport::Publisher pub_out1_high;
 };
 
 }  // namespace rc

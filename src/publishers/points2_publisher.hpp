@@ -46,29 +46,27 @@ namespace rc
 
 class Points2Publisher : public GenICam2RosPublisher
 {
-  public:
+public:
+  Points2Publisher(rclcpp::Node * node, const std::string & frame_id);
 
-    Points2Publisher(rclcpp::Node *node, const std::string& frame_id);
+  bool used() override;
+  void requiresComponents(int & components, bool & color) override;
 
-    bool used() override;
-    void requiresComponents(int& components, bool& color) override;
+  void publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat) override;
 
-    void publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat) override;
+private:
+  Points2Publisher(const Points2Publisher &);              // forbidden
+  Points2Publisher & operator=(const Points2Publisher &);  // forbidden
 
-  private:
+  rcg::ImageList left_list;
+  rcg::ImageList disp_list;
 
-    Points2Publisher(const Points2Publisher&);             // forbidden
-    Points2Publisher& operator=(const Points2Publisher&);  // forbidden
+  float f, t;
+  float invalid;
+  float scale;
 
-    rcg::ImageList left_list;
-    rcg::ImageList disp_list;
-
-    float f, t;
-    float invalid;
-    float scale;
-
-    rclcpp::Node *node;
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2> > pub;
+  rclcpp::Node * node;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pub;
 };
 
 }  // namespace rc

@@ -61,8 +61,8 @@
 namespace rc
 {
 
-GenICamDriver::GenICamDriver(const rclcpp::NodeOptions &options) :
-  Node("genicam_driver", options), updater(this)
+GenICamDriver::GenICamDriver(const rclcpp::NodeOptions & options)
+: Node("genicam_driver", options), updater(this)
 {
   RCLCPP_INFO(this->get_logger(), "Initializing");
 
@@ -85,26 +85,22 @@ GenICamDriver::GenICamDriver(const rclcpp::NodeOptions &options) :
 
   std::string ns = get_namespace();
 
-  if (ns.size() > 0 && ns[0] == '/')
-  {
+  if (ns.size() > 0 && ns[0] == '/') {
     ns = ns.substr(1);
   }
 
-  if (ns.size() > 0)
-  {
+  if (ns.size() > 0) {
     frame_id = ns + "_camera";
-  }
-  else
-  {
+  } else {
     frame_id = "camera";
   }
 
   // declare read-only parameters
 
   rcl_interfaces::msg::ParameterDescriptor device_descr;
-  device_descr.description="Device ID which can be '*' (default) if only one device is connected";
-  device_descr.additional_constraints="[[<interface>]:]<serial>|<name>";
-  device_descr.read_only=true;
+  device_descr.description = "Device ID which can be '*' (default) if only one device is connected";
+  device_descr.additional_constraints = "[[<interface>]:]<serial>|<name>";
+  device_descr.read_only = true;
 
   declare_parameter("device", std::string("*"), device_descr);
 
@@ -126,8 +122,7 @@ GenICamDriver::~GenICamDriver()
   // signal running thread to stop and wait until it has finished
 
   running = false;
-  if (process_thread.joinable())
-  {
+  if (process_thread.joinable()) {
     process_thread.join();
   }
 
@@ -137,33 +132,33 @@ GenICamDriver::~GenICamDriver()
 namespace
 {
 
-std::vector<std::shared_ptr<rcg::Device> > getSupportedDevices(const std::string& devid,
-                                                               const std::vector<std::string>& iname)
+std::vector<std::shared_ptr<rcg::Device>> getSupportedDevices(
+  const std::string & devid,
+  const std::vector<std::string> & iname)
 {
-  std::vector<std::shared_ptr<rcg::System> > system = rcg::System::getSystems();
-  std::vector<std::shared_ptr<rcg::Device> > ret;
+  std::vector<std::shared_ptr<rcg::System>> system = rcg::System::getSystems();
+  std::vector<std::shared_ptr<rcg::Device>> ret;
 
-  for (size_t i = 0; i < system.size(); i++)
-  {
+  for (size_t i = 0; i < system.size(); i++) {
     system[i]->open();
 
-    std::vector<std::shared_ptr<rcg::Interface> > interf = system[i]->getInterfaces();
+    std::vector<std::shared_ptr<rcg::Interface>> interf = system[i]->getInterfaces();
 
-    for (size_t k = 0; k < interf.size(); k++)
-    {
+    for (size_t k = 0; k < interf.size(); k++) {
       if (interf[k]->getTLType() == "GEV" &&
-          (iname.size() == 0 || std::find(iname.begin(), iname.end(), interf[k]->getID()) != iname.end()))
+        (iname.size() == 0 ||
+        std::find(iname.begin(), iname.end(), interf[k]->getID()) != iname.end()))
       {
         interf[k]->open();
 
-        std::vector<std::shared_ptr<rcg::Device> > device = interf[k]->getDevices();
+        std::vector<std::shared_ptr<rcg::Device>> device = interf[k]->getDevices();
 
-        for (size_t j = 0; j < device.size(); j++)
-        {
+        for (size_t j = 0; j < device.size(); j++) {
           if (device[j]->getVendor() == "Roboception GmbH" &&
-              (device[j]->getModel().substr(0, 9) == "rc_visard" || device[j]->getModel().substr(0, 7) == "rc_cube") &&
-              (devid == "*" || device[j]->getID() == devid || device[j]->getSerialNumber() == devid ||
-               device[j]->getDisplayName() == devid))
+            (device[j]->getModel().substr(0,
+            9) == "rc_visard" || device[j]->getModel().substr(0, 7) == "rc_cube") &&
+            (devid == "*" || device[j]->getID() == devid || device[j]->getSerialNumber() == devid ||
+            device[j]->getDisplayName() == devid))
           {
             ret.push_back(device[j]);
           }
@@ -181,21 +176,21 @@ std::vector<std::shared_ptr<rcg::Device> > getSupportedDevices(const std::string
 
 class NoDeviceException : public std::invalid_argument
 {
-  public:
-
-    NoDeviceException(const char* msg) : std::invalid_argument(msg)
-    { }
+public:
+  NoDeviceException(const char * msg)
+  : std::invalid_argument(msg)
+  {}
 };
 
-void split(std::vector<std::string>& list, const std::string& s, char delim, bool skip_empty=true)
+void split(
+  std::vector<std::string> & list, const std::string & s, char delim,
+  bool skip_empty = true)
 {
   std::stringstream in(s);
   std::string elem;
 
-  while (getline(in, elem, delim))
-  {
-    if (!skip_empty || elem.size() > 0)
-    {
+  while (getline(in, elem, delim)) {
+    if (!skip_empty || elem.size() > 0) {
       list.push_back(elem);
     }
   }
@@ -203,168 +198,159 @@ void split(std::vector<std::string>& list, const std::string& s, char delim, boo
 
 }  // namespace
 
-bool GenICamDriver::declareGenICamParameter(const std::string &ros_name,
-  const std::shared_ptr<GenApi::CNodeMapRef> &nodemap, const std::string &name)
+bool GenICamDriver::declareGenICamParameter(
+  const std::string & ros_name,
+  const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name)
 {
-  bool ret=false;
+  bool ret = false;
 
-  try
-  {
+  try {
     std::lock_guard<std::recursive_mutex> lock(param_mtx);
 
-    GenApi::INode *node=nodemap->_GetNode(name.c_str());
+    GenApi::INode * node = nodemap->_GetNode(name.c_str());
 
-    if (node != 0)
-    {
-      if (GenApi::IsReadable(node) && GenApi::IsWritable(node))
-      {
+    if (node != 0) {
+      if (GenApi::IsReadable(node) && GenApi::IsWritable(node)) {
         rcl_interfaces::msg::ParameterDescriptor param_descr;
-        param_descr.description=node->GetDescription();
+        param_descr.description = node->GetDescription();
 
-        switch (node->GetPrincipalInterfaceType())
-        {
+        switch (node->GetPrincipalInterfaceType()) {
           case GenApi::intfIBoolean:
             {
-              GenApi::IBoolean *p=dynamic_cast<GenApi::IBoolean *>(node);
+              GenApi::IBoolean * p = dynamic_cast<GenApi::IBoolean *>(node);
 
-              param[ros_name]=name;
+              param[ros_name] = name;
               declare_parameter(ros_name, p->GetValue(false, false), param_descr);
-              ret=true;
+              ret = true;
             }
             break;
 
           case GenApi::intfIInteger:
             {
-              GenApi::IInteger *p=dynamic_cast<GenApi::IInteger *>(node);
+              GenApi::IInteger * p = dynamic_cast<GenApi::IInteger *>(node);
 
               rcl_interfaces::msg::IntegerRange int_range;
 
-              int_range.from_value=p->GetMin();
-              int_range.to_value=p->GetMax();
+              int_range.from_value = p->GetMin();
+              int_range.to_value = p->GetMax();
 
-              int_range.step=1;
-              if (p->GetIncMode() == GenApi::fixedIncrement)
-              {
-                int_range.step=p->GetInc();
+              int_range.step = 1;
+              if (p->GetIncMode() == GenApi::fixedIncrement) {
+                int_range.step = p->GetInc();
               }
 
               param_descr.integer_range.push_back(int_range);
 
-              param[ros_name]=name;
+              param[ros_name] = name;
               declare_parameter(ros_name, p->GetValue(false, false), param_descr);
-              ret=true;
+              ret = true;
             }
             break;
 
           case GenApi::intfIFloat:
             {
-              GenApi::IFloat *p=dynamic_cast<GenApi::IFloat *>(node);
+              GenApi::IFloat * p = dynamic_cast<GenApi::IFloat *>(node);
 
               rcl_interfaces::msg::FloatingPointRange float_range;
 
-              float_range.from_value=p->GetMin();
-              float_range.to_value=p->GetMax();
+              float_range.from_value = p->GetMin();
+              float_range.to_value = p->GetMax();
 
-              float_range.step=0;
-              if (p->GetIncMode() == GenApi::fixedIncrement)
-              {
-                float_range.step=p->GetInc();
+              float_range.step = 0;
+              if (p->GetIncMode() == GenApi::fixedIncrement) {
+                float_range.step = p->GetInc();
               }
 
               param_descr.floating_point_range.push_back(float_range);
 
-              param[ros_name]=name;
+              param[ros_name] = name;
               declare_parameter(ros_name, p->GetValue(false, false), param_descr);
-              ret=true;
+              ret = true;
             }
             break;
 
           case GenApi::intfIString:
             {
-              GenApi::IString *p=dynamic_cast<GenApi::IString *>(node);
+              GenApi::IString * p = dynamic_cast<GenApi::IString *>(node);
 
-              param[ros_name]=name;
+              param[ros_name] = name;
               declare_parameter(ros_name, std::string(p->GetValue(false, false)), param_descr);
-              ret=true;
+              ret = true;
             }
             break;
 
           case GenApi::intfIEnumeration:
             {
-              GenApi::IEnumeration *p=dynamic_cast<GenApi::IEnumeration *>(node);
+              GenApi::IEnumeration * p = dynamic_cast<GenApi::IEnumeration *>(node);
 
               GenApi::StringList_t entries;
               p->GetSymbolics(entries);
 
               std::ostringstream out;
-              for (size_t i=0; i<entries.size(); i++)
-              {
-                if (i > 0) out << '|';
+              for (size_t i = 0; i < entries.size(); i++) {
+                if (i > 0) {out << '|';}
                 out << entries[i];
               }
 
-              param_descr.additional_constraints=out.str();
+              param_descr.additional_constraints = out.str();
 
               std::string val;
-              GenApi::IEnumEntry *entry=p->GetCurrentEntry();
-              if (entry != 0)
-              {
-                val=entry->GetSymbolic();
+              GenApi::IEnumEntry * entry = p->GetCurrentEntry();
+              if (entry != 0) {
+                val = entry->GetSymbolic();
               }
 
-              param[ros_name]=name;
+              param[ros_name] = name;
               declare_parameter(ros_name, val, param_descr);
-              ret=true;
+              ret = true;
             }
             break;
 
           default:
-            RCLCPP_INFO_STREAM(this->get_logger(), "Parameter has unsupported type: " << ros_name << " (" << name << ")");
+            RCLCPP_INFO_STREAM(
+              this->get_logger(),
+              "Parameter has unsupported type: " << ros_name << " (" << name << ")");
             break;
         }
+      } else {
+        RCLCPP_INFO_STREAM(
+          this->get_logger(),
+          "Parameter not readable or writable: " << ros_name << " (" << name << ")");
       }
-      else
-      {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Parameter not readable or writable: " << ros_name << " (" << name << ")");
-      }
+    } else {
+      RCLCPP_INFO_STREAM(
+        this->get_logger(), "Parameter does not exists: " << ros_name << " (" << name << ")");
     }
-    else
-    {
-      RCLCPP_INFO_STREAM(this->get_logger(), "Parameter does not exists: " << ros_name << " (" << name << ")");
-    }
-  }
-  catch (const GENICAM_NAMESPACE::GenericException &ex)
-  {
+  } catch (const GENICAM_NAMESPACE::GenericException & ex) {
     RCLCPP_WARN_STREAM(this->get_logger(), "Parameter: " << ros_name << " (" << name << ")");
   }
 
   return ret;
 }
 
-bool GenICamDriver::declareGenICamParameter(const std::string &ros_name,
-  const std::shared_ptr<GenApi::CNodeMapRef> &nodemap, const std::string &name,
-  const std::string &selector_name, const std::string &selector_value)
+bool GenICamDriver::declareGenICamParameter(
+  const std::string & ros_name,
+  const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name,
+  const std::string & selector_name, const std::string & selector_value)
 {
   std::lock_guard<std::recursive_mutex> lock(param_mtx);
-  bool ret=false;
+  bool ret = false;
 
   // set selector as requested
 
-  std::string v=rcg::getEnum(nodemap, selector_name.c_str(), false);
+  std::string v = rcg::getEnum(nodemap, selector_name.c_str(), false);
 
   if (v == selector_value || rcg::setEnum(nodemap, selector_name.c_str(), selector_value.c_str(),
-      false))
+    false))
   {
-    param_selector[ros_name]=std::make_pair(selector_name, selector_value);
+    param_selector[ros_name] = std::make_pair(selector_name, selector_value);
 
     // declare paraemter
 
-    ret=declareGenICamParameter(ros_name, nodemap, name);
-  }
-  else
-  {
+    ret = declareGenICamParameter(ros_name, nodemap, name);
+  } else {
     RCLCPP_INFO_STREAM(this->get_logger(), "Selector of parameter cannot be found or changed: " <<
-                       ros_name << " (" << selector_name << "=" << selector_value << ")");
+      ros_name << " (" << selector_name << "=" << selector_value << ")");
   }
 
   return ret;
@@ -400,10 +386,8 @@ void GenICamDriver::configure()
 
   {
     size_t i = dname.find(':');
-    if (i != std::string::npos)
-    {
-      if (i > 0)
-      {
+    if (i != std::string::npos) {
+      if (i > 0) {
         iname.push_back(id.substr(0, i));
       }
 
@@ -413,26 +397,23 @@ void GenICamDriver::configure()
 
   // open device and get nodemap
 
-  std::vector<std::shared_ptr<rcg::Device> > devices=getSupportedDevices(dname, iname);
+  std::vector<std::shared_ptr<rcg::Device>> devices = getSupportedDevices(dname, iname);
 
-  if (devices.size() == 0)
-  {
+  if (devices.size() == 0) {
     throw NoDeviceException(("Cannot find device '" + id + "'").c_str());
   }
 
-  if (devices.size() > 1)
-  {
+  if (devices.size() > 1) {
     throw std::invalid_argument("Too many devices, please specify unique ID");
   }
 
-  dev=devices[0];
+  dev = devices[0];
   dev->open(rcg::Device::CONTROL);
-  nodemap=dev->getRemoteNodeMap();
+  nodemap = dev->getRemoteNodeMap();
 
   // check if device is ready
 
-  if (!rcg::getBoolean(nodemap, "RcSystemReady", true, true))
-  {
+  if (!rcg::getBoolean(nodemap, "RcSystemReady", true, true)) {
     throw std::invalid_argument("Device is not yet ready");
   }
 
@@ -441,16 +422,16 @@ void GenICamDriver::configure()
 
     // get serial number and IP
 
-    device_interface=dev->getParent()->getID();
-    device_serial=dev->getSerialNumber();
-    device_mac=rcg::getString(nodemap, "GevMACAddress", true);
-    device_name=rcg::getString(nodemap, "DeviceUserID", true);
-    device_ip=rcg::getString(nodemap, "GevCurrentIPAddress", true);
+    device_interface = dev->getParent()->getID();
+    device_serial = dev->getSerialNumber();
+    device_mac = rcg::getString(nodemap, "GevMACAddress", true);
+    device_name = rcg::getString(nodemap, "DeviceUserID", true);
+    device_ip = rcg::getString(nodemap, "GevCurrentIPAddress", true);
 
     updater.setHardwareID(device_serial);
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Connecting to sensor '" << device_interface << ":"
-                       << device_serial << "' alias " << dev->getDisplayName());
+    RCLCPP_INFO_STREAM(this->get_logger(), "Connecting to sensor '" << device_interface << ":" <<
+      device_serial << "' alias " << dev->getDisplayName());
 
     // ensure that device version >= 20.04
 
@@ -459,15 +440,16 @@ void GenICamDriver::configure()
     std::vector<std::string> list;
     split(list, device_version, '.');
 
-    if (list.size() < 3 || std::stoi(list[0]) < 20 || (std::stoi(list[0]) == 20 && std::stoi(list[1]) < 4))
+    if (list.size() < 3 || std::stoi(list[0]) < 20 ||
+      (std::stoi(list[0]) == 20 && std::stoi(list[1]) < 4))
     {
-      running=false;
-      throw std::invalid_argument("Device version must be 20.04 or higher: "+device_version);
+      running = false;
+      throw std::invalid_argument("Device version must be 20.04 or higher: " + device_version);
     }
 
     // get model type of the device
 
-    device_model=rcg::getString(nodemap, "DeviceModelName");
+    device_model = rcg::getString(nodemap, "DeviceModelName");
   }
 
   // check for color sensor and iocontrol
@@ -478,10 +460,8 @@ void GenICamDriver::configure()
     std::vector<std::string> formats;
     rcg::setEnum(nodemap, "ComponentSelector", "Intensity", true);
     rcg::getEnum(nodemap, "PixelFormat", formats, true);
-    for (auto&& format : formats)
-    {
-      if (format == "YCbCr411_8")
-      {
+    for (auto && format : formats) {
+      if (format == "YCbCr411_8") {
         color = true;
         break;
       }
@@ -492,13 +472,13 @@ void GenICamDriver::configure()
 
   // initialise variables for caching some values
 
-  remote_out1_mode="";
-  update_exp_values=false;
-  update_wb_values=false;
+  remote_out1_mode = "";
+  update_exp_values = false;
+  update_wb_values = false;
 
   // register parameter callback
 
-  param_cb=add_on_set_parameters_callback(std::bind(&GenICamDriver::paramCallback, this, _1));
+  param_cb = add_on_set_parameters_callback(std::bind(&GenICamDriver::paramCallback, this, _1));
 
   // declare parameters and mapping to GenICam (all are allowed to fail if
   // parameters are not available in the given nodemap)
@@ -519,11 +499,12 @@ void GenICamDriver::configure()
   declareGenICamParameter("camera_exp_value", nodemap, "ExposureTime");
   declareGenICamParameter("camera_gain_value", nodemap, "Gain", "GainSelector", "All");
 
-  if (color)
-  {
+  if (color) {
     declareGenICamParameter("camera_wb_auto", nodemap, "BalanceWhiteAuto");
-    declareGenICamParameter("camera_wb_ratio_red", nodemap, "BalanceRatio", "BalanceRatioSelector", "Red");
-    declareGenICamParameter("camera_wb_ratio_blue", nodemap, "BalanceRatio", "BalanceRatioSelector", "Blue");
+    declareGenICamParameter("camera_wb_ratio_red", nodemap, "BalanceRatio", "BalanceRatioSelector",
+      "Red");
+    declareGenICamParameter("camera_wb_ratio_blue", nodemap, "BalanceRatio", "BalanceRatioSelector",
+      "Blue");
   }
 
   declareGenICamParameter("depth_acquisition_mode", nodemap, "DepthAcquisitionMode");
@@ -540,8 +521,7 @@ void GenICamDriver::configure()
 
   declareGenICamParameter("ptp_enabled", nodemap, "GevIEEE1588");
 
-  if (iocontrol_avail)
-  {
+  if (iocontrol_avail) {
     declareGenICamParameter("out1_mode", nodemap, "LineSource", "LineSelector", "Out1");
     declareGenICamParameter("out2_mode", nodemap, "LineSource", "LineSelector", "Out2");
   }
@@ -565,8 +545,7 @@ void GenICamDriver::configure()
   pub.push_back(std::make_shared<ImagePublisher>(this, frame_id, true, false, iocontrol_avail));
   pub.push_back(std::make_shared<ImagePublisher>(this, frame_id, false, false, iocontrol_avail));
 
-  if (color)
-  {
+  if (color) {
     pub.push_back(std::make_shared<ImagePublisher>(this, frame_id, true, true, iocontrol_avail));
     pub.push_back(std::make_shared<ImagePublisher>(this, frame_id, false, true, iocontrol_avail));
   }
@@ -583,8 +562,7 @@ void GenICamDriver::configure()
 
   // make nodemap available to publshers
 
-  for (auto&& p : pub)
-  {
+  for (auto && p : pub) {
     p->setNodemap(nodemap);
   }
 
@@ -598,7 +576,7 @@ void GenICamDriver::configure()
   // register trigger service call
 
   trigger_service = create_service<rc_common_msgs::srv::Trigger>(
-    std::string(get_name())+"/depth_acquisition_trigger",
+    std::string(get_name()) + "/depth_acquisition_trigger",
     std::bind(&GenICamDriver::triggerDepthAcquisition, this, _1, _2, _3));
 }
 
@@ -612,8 +590,7 @@ void GenICamDriver::cleanup()
 
   // stop thread that checks for subscriptions
 
-  if (pub_sub_timer)
-  {
+  if (pub_sub_timer) {
     pub_sub_timer->cancel();
     pub_sub_timer.reset();
   }
@@ -630,14 +607,10 @@ void GenICamDriver::cleanup()
 
   // undeclare all parameters
 
-  for (std::map<std::string, std::string>::iterator it=param.begin(); it!=param.end(); ++it)
-  {
-    try
-    {
+  for (std::map<std::string, std::string>::iterator it = param.begin(); it != param.end(); ++it) {
+    try {
       undeclare_parameter(it->first);
-    }
-    catch (const rclcpp::exceptions::ParameterNotDeclaredException &ex)
-    {
+    } catch (const rclcpp::exceptions::ParameterNotDeclaredException & ex) {
       RCLCPP_WARN_STREAM(this->get_logger(), "Cannot remove parameter: " << ex.what());
     }
   }
@@ -647,8 +620,9 @@ void GenICamDriver::cleanup()
 
   // close device and reset nodemap
 
-  if (dev)
+  if (dev) {
     dev->close();
+  }
 
   dev.reset();
   nodemap.reset();
@@ -679,15 +653,13 @@ void GenICamDriver::updateSubscriptions(bool force)
   int rcomponents = 0;
   bool rcolor = false;
 
-  for (auto&& p : pub)
-  {
+  for (auto && p : pub) {
     p->requiresComponents(rcomponents, rcolor);
   }
 
   // Intensity is contained in IntensityCombined
 
-  if (rcomponents & GenICam2RosPublisher::ComponentIntensityCombined)
-  {
+  if (rcomponents & GenICam2RosPublisher::ComponentIntensityCombined) {
     rcomponents &= ~GenICam2RosPublisher::ComponentIntensity;
   }
 
@@ -695,28 +667,26 @@ void GenICamDriver::updateSubscriptions(bool force)
 
   const static struct
   {
-    const char* name;
+    const char * name;
     int flag;
-  } comp[] = { { "Intensity", GenICam2RosPublisher::ComponentIntensity },
-               { "IntensityCombined", GenICam2RosPublisher::ComponentIntensityCombined },
-               { "Disparity", GenICam2RosPublisher::ComponentDisparity },
-               { "Confidence", GenICam2RosPublisher::ComponentConfidence },
-               { "Error", GenICam2RosPublisher::ComponentError },
-               { 0, 0 } };
+  } comp[] = {{"Intensity", GenICam2RosPublisher::ComponentIntensity},
+    {"IntensityCombined", GenICam2RosPublisher::ComponentIntensityCombined},
+    {"Disparity", GenICam2RosPublisher::ComponentDisparity},
+    {"Confidence", GenICam2RosPublisher::ComponentConfidence},
+    {"Error", GenICam2RosPublisher::ComponentError},
+    {0, 0}};
 
-  for (size_t i = 0; comp[i].name != 0; i++)
-  {
-    if (((rcomponents ^ scomponents) & comp[i].flag) || force)
-    {
+  for (size_t i = 0; comp[i].name != 0; i++) {
+    if (((rcomponents ^ scomponents) & comp[i].flag) || force) {
       rcg::setEnum(nodemap, "ComponentSelector", comp[i].name, true);
       rcg::setBoolean(nodemap, "ComponentEnable", (rcomponents & comp[i].flag), true);
 
-      const char* status = "disabled";
-      if (rcomponents & comp[i].flag)
+      const char * status = "disabled";
+      if (rcomponents & comp[i].flag) {
         status = "enabled";
+      }
 
-      if (!force || (rcomponents & comp[i].flag))
-      {
+      if (!force || (rcomponents & comp[i].flag)) {
         RCLCPP_INFO_STREAM(this->get_logger(), "Component '" << comp[i].name << "' " << status);
       }
     }
@@ -724,11 +694,9 @@ void GenICamDriver::updateSubscriptions(bool force)
 
   // enable or disable color
 
-  if (rcolor != scolor || force)
-  {
-    const char* format = "Mono8";
-    if (rcolor)
-    {
+  if (rcolor != scolor || force) {
+    const char * format = "Mono8";
+    if (rcolor) {
       format = "YCbCr411_8";
     }
 
@@ -749,65 +717,59 @@ void GenICamDriver::checkSubscriptions()
   updateSubscriptions(false);
 }
 
-rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(const std::vector<rclcpp::Parameter> &p)
+rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(
+  const std::vector<rclcpp::Parameter> & p)
 {
   std::lock_guard<std::recursive_mutex> lock(param_mtx);
   rcl_interfaces::msg::SetParametersResult ret;
-  ret.successful=true;
+  ret.successful = true;
 
-  for (size_t i=0; i<p.size(); i++)
-  {
+  for (size_t i = 0; i < p.size(); i++) {
     // signal processing thread to update manual exposure or white balancing
     // values if automatic has been turned off
 
     if (p[i].get_name() == "camera_exp_auto" && p[i].get_type() == rclcpp::PARAMETER_STRING &&
-        p[i].as_string() == "Off")
+      p[i].as_string() == "Off")
     {
-      update_exp_values=true;
+      update_exp_values = true;
     }
 
     if (p[i].get_name() == "camera_wb_auto" && p[i].get_type() == rclcpp::PARAMETER_STRING &&
-        p[i].as_string() == "Off")
+      p[i].as_string() == "Off")
     {
-      update_wb_values=true;
+      update_wb_values = true;
     }
 
     // skip if value is cached one
 
-    if (p[i].get_name() == "out1_mode"  && p[i].get_type() == rclcpp::PARAMETER_STRING &&
-        p[i].as_string() == remote_out1_mode)
+    if (p[i].get_name() == "out1_mode" && p[i].get_type() == rclcpp::PARAMETER_STRING &&
+      p[i].as_string() == remote_out1_mode)
     {
       continue;
     }
 
     // set selector if any
 
-    try
-    {
-      const std::pair<std::string, std::string> &sel=param_selector.at(p[i].get_name());
+    try {
+      const std::pair<std::string, std::string> & sel = param_selector.at(p[i].get_name());
 
-      std::string v=rcg::getEnum(nodemap, sel.first.c_str(), false);
+      std::string v = rcg::getEnum(nodemap, sel.first.c_str(), false);
 
-      if (v != sel.second && !rcg::setEnum(nodemap, sel.first.c_str(), sel.second.c_str(), false))
-      {
-        ret.successful=false;
-        ret.reason="Cannot set selector "+sel.first+" to value "+sel.second;
+      if (v != sel.second && !rcg::setEnum(nodemap, sel.first.c_str(), sel.second.c_str(), false)) {
+        ret.successful = false;
+        ret.reason = "Cannot set selector " + sel.first + " to value " + sel.second;
         break;
       }
-    }
-    catch (const std::out_of_range &)
-    {
+    } catch (const std::out_of_range &) {
       // permitted as not all parameters require to first set a selector
     }
 
     // translate ros parameter name to GenICam name
 
-    try
-    {
-      const std::string &name=param.at(p[i].get_name());
+    try {
+      const std::string & name = param.at(p[i].get_name());
 
-      switch (p[i].get_type())
-      {
+      switch (p[i].get_type()) {
         case rclcpp::PARAMETER_BOOL:
           rcg::setBoolean(nodemap, name.c_str(), p[i].as_bool(), true);
           break;
@@ -826,29 +788,24 @@ rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(const std:
             // an exception is thrown that causes rejection of the value
             rcg::setString(nodemap, name.c_str(), p[i].as_string().c_str(), true);
 
-            if (p[i].get_name() == "out1_mode")
-            {
+            if (p[i].get_name() == "out1_mode") {
               remote_out1_mode = p[i].as_string();
             }
           }
           break;
 
         default:
-          ret.successful=false;
-          ret.reason="Internal error: Unknown type of parameter "+p[i].get_name();
+          ret.successful = false;
+          ret.reason = "Internal error: Unknown type of parameter " + p[i].get_name();
           break;
       }
-    }
-    catch (const std::out_of_range &)
-    {
-      ret.successful=false;
-      ret.reason="Internal error: unknown parameter "+p[i].get_name();
+    } catch (const std::out_of_range &) {
+      ret.successful = false;
+      ret.reason = "Internal error: unknown parameter " + p[i].get_name();
       break;
-    }
-    catch (const std::exception &ex)
-    {
-      ret.successful=false;
-      ret.reason="Cannot set parameter "+p[i].get_name()+": "+ex.what();
+    } catch (const std::exception & ex) {
+      ret.successful = false;
+      ret.reason = "Cannot set parameter " + p[i].get_name() + ": " + ex.what();
       break;
     }
   }
@@ -856,51 +813,44 @@ rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(const std:
   return ret;
 }
 
-void GenICamDriver::triggerDepthAcquisition(const std::shared_ptr<rmw_request_id_t>,
+void GenICamDriver::triggerDepthAcquisition(
+  const std::shared_ptr<rmw_request_id_t>,
   const std::shared_ptr<rc_common_msgs::srv::Trigger::Request>,
   std::shared_ptr<rc_common_msgs::srv::Trigger::Response> res)
 {
   std::lock_guard<std::recursive_mutex> lock(param_mtx);
 
-  if (nodemap)
-  {
+  if (nodemap) {
     std::string mode;
     get_parameter("depth_acquisition_mode", mode);
 
-    if (mode != "Continuous")
-    {
-      try
-      {
+    if (mode != "Continuous") {
+      try {
         RCLCPP_DEBUG(this->get_logger(), "Triggering stereo matching");
 
         rcg::callCommand(nodemap, "DepthAcquisitionTrigger", true);
 
         res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::SUCCESS;
         res->return_code.message = "Stereo matching was triggered.";
-      }
-      catch (const std::exception& ex)
-      {
+      } catch (const std::exception & ex) {
         res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::INTERNAL_ERROR;
         res->return_code.message = ex.what();
         RCLCPP_ERROR(this->get_logger(), ex.what());
       }
-    }
-    else
-    {
+    } else {
       res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::NOT_APPLICABLE;
-      res->return_code.message = "Triggering stereo matching is only possible if depth_acquisition_mode is set to SingleFrame "
-                                "or SingleFrameOut1!";
+      res->return_code.message =
+        "Triggering stereo matching is only possible if depth_acquisition_mode is set to SingleFrame "
+        "or SingleFrameOut1!";
       RCLCPP_DEBUG(this->get_logger(), res->return_code.message);
     }
-  }
-  else
-  {
+  } else {
     res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::NOT_APPLICABLE;
     res->return_code.message = "Not connected";
   }
 }
 
-void GenICamDriver::publishConnectionDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
+void GenICamDriver::publishConnectionDiagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   std::lock_guard<std::recursive_mutex> lock(updater_mtx);
 
@@ -912,8 +862,7 @@ void GenICamDriver::publishConnectionDiagnostics(diagnostic_updater::DiagnosticS
 
   // general connection status
 
-  if (device_serial.empty())
-  {
+  if (device_serial.empty()) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Disconnected");
     return;
   }
@@ -924,36 +873,27 @@ void GenICamDriver::publishConnectionDiagnostics(diagnostic_updater::DiagnosticS
   stat.add("ip_address", device_ip);
   stat.add("gev_packet_size", gev_packet_size);
 
-  if (scomponents)
-  {
-    if (streaming)
-    {
+  if (scomponents) {
+    if (streaming) {
       // someone subscribed to images, and we actually receive data via GigE vision
       stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Streaming");
-    }
-    else
-    {
+    } else {
       // someone subscribed to images, but we do not receive any data via GigE vision (yet)
       stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "No data");
     }
-  }
-  else
-  {
+  } else {
     // no one requested images -> node is ok but stale
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Idle");
   }
 }
 
-void GenICamDriver::publishDeviceDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
+void GenICamDriver::publishDeviceDiagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   std::lock_guard<std::recursive_mutex> lock(updater_mtx);
 
-  if (device_serial.empty())
-  {
+  if (device_serial.empty()) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Unknown");
-  }
-  else
-  {
+  } else {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Info");
     stat.add("model", device_model);
     stat.add("image_version", device_version);
@@ -965,20 +905,17 @@ void GenICamDriver::publishDeviceDiagnostics(diagnostic_updater::DiagnosticStatu
 
 void GenICamDriver::process()
 {
-  try
-  {
+  try {
     RCLCPP_INFO(this->get_logger(), "Processing thread started");
 
     // loop until nodelet is killed
 
-    while (running)
-    {
+    while (running) {
       streaming = false;
 
       // report standard exceptions and try again
 
-      try
-      {
+      try {
         std::shared_ptr<GenApi::CChunkAdapter> chunkadapter;
 
         configure(); // connect and setup parameters and publishers
@@ -994,10 +931,9 @@ void GenICamDriver::process()
 
         // start streaming
 
-        std::vector<std::shared_ptr<rcg::Stream> > stream = dev->getStreams();
+        std::vector<std::shared_ptr<rcg::Stream>> stream = dev->getStreams();
 
-        if (stream.size() == 0)
-        {
+        if (stream.size() == 0) {
           throw std::invalid_argument("Device does not offer streams");
         }
 
@@ -1012,39 +948,33 @@ void GenICamDriver::process()
 
         // grabbing and publishing
 
-        while (running)
-        {
+        while (running) {
           // grab next buffer
 
-          const rcg::Buffer* buffer = stream[0]->grab(500);
+          const rcg::Buffer * buffer = stream[0]->grab(500);
           std::string out1_mode_on_sensor;
 
           // process buffer
 
-          if (buffer)
-          {
+          if (buffer) {
             streaming = true;
 
-            if (buffer->getIsIncomplete())
-            {
+            if (buffer->getIsIncomplete()) {
               incomplete_buffers_total++;
               out1_mode_on_sensor = "";
-            }
-            else
-            {
+            } else {
               complete_buffers_total++;
 
               std::lock_guard<std::recursive_mutex> lock(param_mtx);
 
-              if (gev_packet_size == 0)
-              {
+              if (gev_packet_size == 0) {
                 gev_packet_size = rcg::getInteger(nodemap, "GevSCPSPacketSize", 0, 0, true, false);
               }
 
               // attach buffer to nodemap to access chunk data
 
-              chunkadapter->AttachBuffer(reinterpret_cast<std::uint8_t*>(buffer->getGlobalBase()),
-                                         buffer->getSizeFilled());
+              chunkadapter->AttachBuffer(reinterpret_cast<std::uint8_t *>(buffer->getGlobalBase()),
+                buffer->getSizeFilled());
 
               // get out1 mode on device, which may have changed
 
@@ -1054,13 +984,10 @@ void GenICamDriver::process()
               // publish all parts of buffer
 
               uint32_t npart = buffer->getNumberOfParts();
-              for (uint32_t part = 0; part < npart; part++)
-              {
-                if (buffer->getImagePresent(part))
-                {
+              for (uint32_t part = 0; part < npart; part++) {
+                if (buffer->getImagePresent(part)) {
                   uint64_t pixelformat = buffer->getPixelFormat(part);
-                  for (auto&& p : pub)
-                  {
+                  for (auto && p : pub) {
                     p->publish(buffer, part, pixelformat);
                   }
                 }
@@ -1070,9 +997,7 @@ void GenICamDriver::process()
 
               chunkadapter->DetachBuffer();
             }
-          }
-          else
-          {
+          } else {
             image_receive_timeouts_total++;
             streaming = false;
 
@@ -1087,31 +1012,27 @@ void GenICamDriver::process()
           {
             std::lock_guard<std::recursive_mutex> lock(param_mtx);
 
-            if (update_exp_values)
-            {
-              update_exp_values=false;
+            if (update_exp_values) {
+              update_exp_values = false;
 
-              double exp=rcg::getFloat(nodemap, "ExposureTime", 0, 0, true, true);
+              double exp = rcg::getFloat(nodemap, "ExposureTime", 0, 0, true, true);
               set_parameter(rclcpp::Parameter("camera_exp_value", exp));
 
               rcg::setEnum(nodemap, "GainSelector", "All", false);
-              double gain=rcg::getFloat(nodemap, "Gain", 0, 0, true, true);
+              double gain = rcg::getFloat(nodemap, "Gain", 0, 0, true, true);
               set_parameter(rclcpp::Parameter("camera_gain_value", gain));
             }
 
-            if (update_wb_values)
-            {
-              update_wb_values=false;
+            if (update_wb_values) {
+              update_wb_values = false;
 
-              if (rcg::setEnum(nodemap, "BalanceRatioSelector", "Red", false))
-              {
-                double ratio=rcg::getFloat(nodemap, "BalanceRatio", 0, 0, true, true);
+              if (rcg::setEnum(nodemap, "BalanceRatioSelector", "Red", false)) {
+                double ratio = rcg::getFloat(nodemap, "BalanceRatio", 0, 0, true, true);
                 set_parameter(rclcpp::Parameter("camera_wb_red", ratio));
               }
 
-              if (rcg::setEnum(nodemap, "BalanceRatioSelector", "Blue", false))
-              {
-                double ratio=rcg::getFloat(nodemap, "BalanceRatio", 0, 0, true, true);
+              if (rcg::setEnum(nodemap, "BalanceRatioSelector", "Blue", false)) {
+                double ratio = rcg::getFloat(nodemap, "BalanceRatio", 0, 0, true, true);
                 set_parameter(rclcpp::Parameter("camera_wb_blue", ratio));
               }
             }
@@ -1120,14 +1041,12 @@ void GenICamDriver::process()
             // (which is the only GEV parameter which could have changed outside this code,
             //  i.e. on the rc_visard by the stereomatching module)
 
-            if (out1_mode_on_sensor.size() == 0)
-            {
+            if (out1_mode_on_sensor.size() == 0) {
               // use current settings if the value on the sensor cannot be determined
               out1_mode_on_sensor = remote_out1_mode;
             }
 
-            if (out1_mode_on_sensor != remote_out1_mode)
-            {
+            if (out1_mode_on_sensor != remote_out1_mode) {
               remote_out1_mode = out1_mode_on_sensor;
               set_parameter(rclcpp::Parameter("out1_mode", out1_mode_on_sensor));
             }
@@ -1156,9 +1075,7 @@ void GenICamDriver::process()
 
           updater.force_update();
         }
-      }
-      catch (const NoDeviceException& ex)
-      {
+      } catch (const NoDeviceException & ex) {
         // report error, wait and retry
 
         RCLCPP_WARN(this->get_logger(), ex.what());
@@ -1173,16 +1090,13 @@ void GenICamDriver::process()
         }
 
         sleep(3);
-      }
-      catch (const std::exception& ex)
-      {
+      } catch (const std::exception & ex) {
         {
           std::lock_guard<std::recursive_mutex> lock(updater_mtx);
 
           // close everything and report error
 
-          if (device_ip.size() > 0)
-          {
+          if (device_ip.size() > 0) {
             connection_loss_total++;
           }
 
@@ -1210,13 +1124,9 @@ void GenICamDriver::process()
 
       cleanup();
     }
-  }
-  catch (const std::exception& ex)
-  {
+  } catch (const std::exception & ex) {
     RCLCPP_FATAL(this->get_logger(), ex.what());
-  }
-  catch (...)
-  {
+  } catch (...) {
     RCLCPP_FATAL(this->get_logger(), "Unknown exception");
   }
 

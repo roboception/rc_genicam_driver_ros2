@@ -41,8 +41,8 @@
 namespace rc
 {
 
-ErrorDepthPublisher::ErrorDepthPublisher(rclcpp::Node *_node, const std::string& frame_id)
-  : GenICam2RosPublisher(frame_id)
+ErrorDepthPublisher::ErrorDepthPublisher(rclcpp::Node * _node, const std::string & frame_id)
+: GenICam2RosPublisher(frame_id)
 {
   f = 0;
   t = 0;
@@ -58,22 +58,19 @@ bool ErrorDepthPublisher::used()
   return pub.getNumSubscribers() > 0;
 }
 
-void ErrorDepthPublisher::requiresComponents(int& components, bool&)
+void ErrorDepthPublisher::requiresComponents(int & components, bool &)
 {
-  if (pub.getNumSubscribers() > 0)
-  {
+  if (pub.getNumSubscribers() > 0) {
     components |= ComponentDisparity | ComponentError;
   }
 }
 
-void ErrorDepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat)
+void ErrorDepthPublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat)
 {
-  if (nodemap && pub.getNumSubscribers() > 0)
-  {
+  if (nodemap && pub.getNumSubscribers() > 0) {
     // buffer disparity and error images
 
-    if (pixelformat == Coord3D_C16)
-    {
+    if (pixelformat == Coord3D_C16) {
       disp_list.add(buffer, part);
 
       rcg::setEnum(nodemap, "ChunkComponentSelector", "Disparity", true);
@@ -81,15 +78,12 @@ void ErrorDepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint
       t = rcg::getFloat(nodemap, "ChunkScan3dBaseline", 0, 0, true);
 
       invalid = -1;
-      if (rcg::getBoolean(nodemap, "ChunkScan3dInvalidDataFlag", false))
-      {
+      if (rcg::getBoolean(nodemap, "ChunkScan3dInvalidDataFlag", false)) {
         invalid = rcg::getFloat(nodemap, "ChunkScan3dInvalidDataValue", 0, 0, true);
       }
 
       scale = rcg::getFloat(nodemap, "ChunkScan3dCoordinateScale", 0, 0, true);
-    }
-    else if (pixelformat == Error8)
-    {
+    } else if (pixelformat == Error8) {
       err_list.add(buffer, part);
     }
 
@@ -100,10 +94,8 @@ void ErrorDepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint
     std::shared_ptr<const rcg::Image> disp = disp_list.find(timestamp);
     std::shared_ptr<const rcg::Image> err = err_list.find(timestamp);
 
-    if (disp && err)
-    {
-      if (disp->getWidth() == err->getWidth() && disp->getHeight() == err->getHeight())
-      {
+    if (disp && err) {
+      if (disp->getWidth() == err->getWidth() && disp->getHeight() == err->getHeight()) {
         // create image and initialize header
 
         std::shared_ptr<sensor_msgs::msg::Image> im = std::make_shared<sensor_msgs::msg::Image>();
@@ -120,10 +112,10 @@ void ErrorDepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint
         // get pointer to image data in buffer
 
         size_t dpx = disp->getXPadding();
-        const uint8_t* dps = disp->getPixels();
+        const uint8_t * dps = disp->getPixels();
 
         size_t epx = err->getXPadding();
-        const uint8_t* eps = err->getPixels();
+        const uint8_t * eps = err->getPixels();
 
         // convert image data
 
@@ -132,35 +124,27 @@ void ErrorDepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint
         im->step = im->width * sizeof(float);
 
         im->data.resize(im->step * im->height);
-        float* pt = reinterpret_cast<float*>(&im->data[0]);
+        float * pt = reinterpret_cast<float *>(&im->data[0]);
 
         float s = scale * f * t;
 
         bool bigendian = disp->isBigEndian();
 
-        for (uint32_t k = 0; k < im->height; k++)
-        {
-          for (uint32_t i = 0; i < im->width; i++)
-          {
+        for (uint32_t k = 0; k < im->height; k++) {
+          for (uint32_t i = 0; i < im->width; i++) {
             float d;
 
-            if (bigendian)
-            {
+            if (bigendian) {
               d = scale * ((dps[0] << 8) | dps[1]);
-            }
-            else
-            {
+            } else {
               d = scale * ((dps[1] << 8) | dps[0]);
             }
 
             dps += 2;
 
-            if (d != 0 && d != invalid)
-            {
+            if (d != 0 && d != invalid) {
               *pt++ = *eps * s / (d * d);
-            }
-            else
-            {
+            } else {
               *pt++ = std::numeric_limits<float>::infinity();
             }
 
@@ -174,9 +158,7 @@ void ErrorDepthPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint
         // publish message
 
         pub.publish(im);
-      }
-      else
-      {
+      } else {
         RCLCPP_ERROR_STREAM(node->get_logger(), "Size of disparity and error images differ: " <<
           disp->getWidth() << "x" << disp->getHeight() << " != " << err->getWidth() << "x" <<
           err->getHeight());

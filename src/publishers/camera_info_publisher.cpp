@@ -39,8 +39,10 @@
 namespace rc
 {
 
-CameraInfoPublisher::CameraInfoPublisher(rclcpp::Node *node, const std::string& frame_id, bool _left)
-  : GenICam2RosPublisher(frame_id)
+CameraInfoPublisher::CameraInfoPublisher(
+  rclcpp::Node * node, const std::string & frame_id,
+  bool _left)
+: GenICam2RosPublisher(frame_id)
 {
   // prepare camera info message
 
@@ -91,14 +93,11 @@ CameraInfoPublisher::CameraInfoPublisher(rclcpp::Node *node, const std::string& 
 
   left = _left;
 
-  if (left)
-  {
-    pub=node->create_publisher<sensor_msgs::msg::CameraInfo>("stereo/left/camera_info", 1);
+  if (left) {
+    pub = node->create_publisher<sensor_msgs::msg::CameraInfo>("stereo/left/camera_info", 1);
     left = true;
-  }
-  else
-  {
-    pub=node->create_publisher<sensor_msgs::msg::CameraInfo>("stereo/right/camera_info", 1);
+  } else {
+    pub = node->create_publisher<sensor_msgs::msg::CameraInfo>("stereo/right/camera_info", 1);
     left = false;
   }
 }
@@ -108,18 +107,17 @@ bool CameraInfoPublisher::used()
   return pub->get_subscription_count() > 0;
 }
 
-void CameraInfoPublisher::requiresComponents(int& components, bool&)
+void CameraInfoPublisher::requiresComponents(int & components, bool &)
 {
-  if (pub->get_subscription_count() > 0)
-  {
+  if (pub->get_subscription_count() > 0) {
     components |= ComponentIntensity;
   }
 }
 
-void CameraInfoPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat)
+void CameraInfoPublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat)
 {
   if (nodemap && pub->get_subscription_count() > 0 && (pixelformat == Mono8 ||
-      pixelformat == YCbCr411_8))
+    pixelformat == YCbCr411_8))
   {
     uint64_t time = buffer->getTimestampNS();
 
@@ -129,13 +127,10 @@ void CameraInfoPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint
     info.width = static_cast<uint32_t>(buffer->getWidth(part));
     info.height = static_cast<uint32_t>(buffer->getHeight(part));
 
-    if (info.height > info.width)
-    {
+    if (info.height > info.width) {
       info.height >>= 1;  // left and right images are stacked together
       rcg::setEnum(nodemap, "ChunkComponentSelector", "IntensityCombined", false);
-    }
-    else
-    {
+    } else {
       rcg::setEnum(nodemap, "ChunkComponentSelector", "Intensity", true);
     }
 
@@ -148,12 +143,9 @@ void CameraInfoPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint
     info.p[2] = info.k[2] = rcg::getFloat(nodemap, "ChunkScan3dPrincipalPointU", 0, 0, true);
     info.p[6] = info.k[5] = rcg::getFloat(nodemap, "ChunkScan3dPrincipalPointV", 0, 0, true);
 
-    if (left)
-    {
+    if (left) {
       info.p[3] = 0;
-    }
-    else
-    {
+    } else {
       info.p[3] = -f * t;
     }
 

@@ -59,81 +59,83 @@ namespace rc
 
 class GenICamDriver : public rclcpp::Node
 {
-  public:
-
-    RC_COMPOSITION_PUBLIC
-    GenICamDriver(const rclcpp::NodeOptions &options);
-    virtual ~GenICamDriver();
+public:
+  RC_COMPOSITION_PUBLIC
+  GenICamDriver(const rclcpp::NodeOptions & options);
+  virtual ~GenICamDriver();
 
 //    bool depthAcquisitionTrigger(rc_common_msgs::Trigger::Request& req, rc_common_msgs::Trigger::Response& resp);
 
-  private:
+private:
+  bool declareGenICamParameter(
+    const std::string & ros_name,
+    const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name);
 
-    bool declareGenICamParameter(const std::string &ros_name,
-      const std::shared_ptr<GenApi::CNodeMapRef> &nodemap, const std::string &name);
+  bool declareGenICamParameter(
+    const std::string & ros_name,
+    const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name,
+    const std::string & selector_name, const std::string & selector_value);
 
-    bool declareGenICamParameter(const std::string &ros_name,
-      const std::shared_ptr<GenApi::CNodeMapRef> &nodemap, const std::string &name,
-      const std::string &selector_name, const std::string &selector_value);
+  void configure();
+  void cleanup();
+  void updateSubscriptions(bool force);
+  void checkSubscriptions();
 
-    void configure();
-    void cleanup();
-    void updateSubscriptions(bool force);
-    void checkSubscriptions();
+  rcl_interfaces::msg::SetParametersResult paramCallback(
+    const std::vector<rclcpp::Parameter> & params);
 
-    rcl_interfaces::msg::SetParametersResult paramCallback(const std::vector<rclcpp::Parameter> &params);
+  void triggerDepthAcquisition(
+    const std::shared_ptr<rmw_request_id_t>,
+    const std::shared_ptr<rc_common_msgs::srv::Trigger::Request>,
+    std::shared_ptr<rc_common_msgs::srv::Trigger::Response> res);
 
-    void triggerDepthAcquisition(const std::shared_ptr<rmw_request_id_t>,
-      const std::shared_ptr<rc_common_msgs::srv::Trigger::Request>,
-      std::shared_ptr<rc_common_msgs::srv::Trigger::Response> res);
+  void publishConnectionDiagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  void publishDeviceDiagnostics(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
-    void publishConnectionDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
-    void publishDeviceDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
+  void process();
 
-    void process();
+  diagnostic_updater::Updater updater;
 
-    diagnostic_updater::Updater updater;
+  std::string frame_id;
 
-    std::string frame_id;
+  std::shared_ptr<rcg::Device> dev;
+  std::shared_ptr<GenApi::CNodeMapRef> nodemap;
 
-    std::shared_ptr<rcg::Device> dev;
-    std::shared_ptr<GenApi::CNodeMapRef> nodemap;
+  std::recursive_mutex param_mtx;
+  std::map<std::string, std::string> param;
+  std::map<std::string, std::pair<std::string, std::string>> param_selector;
+  OnSetParametersCallbackHandle::SharedPtr param_cb;
 
-    std::recursive_mutex param_mtx;
-    std::map<std::string, std::string> param;
-    std::map<std::string, std::pair<std::string, std::string> > param_selector;
-    OnSetParametersCallbackHandle::SharedPtr param_cb;
+  int scomponents;
+  bool scolor;
 
-    int scomponents;
-    bool scolor;
+  std::thread process_thread;
+  std::atomic_bool running;
 
-    std::thread process_thread;
-    std::atomic_bool running;
+  std::vector<std::shared_ptr<GenICam2RosPublisher>> pub;
+  rclcpp::TimerBase::SharedPtr pub_sub_timer;
 
-    std::vector<std::shared_ptr<GenICam2RosPublisher> > pub;
-    rclcpp::TimerBase::SharedPtr pub_sub_timer;
+  rclcpp::Service<rc_common_msgs::srv::Trigger>::SharedPtr trigger_service;
 
-    rclcpp::Service<rc_common_msgs::srv::Trigger>::SharedPtr trigger_service;
+  std::string remote_out1_mode;
+  bool update_exp_values;
+  bool update_wb_values;
 
-    std::string remote_out1_mode;
-    bool update_exp_values;
-    bool update_wb_values;
-
-    std::recursive_mutex updater_mtx;
-    std::string device_model;
-    std::string device_version;
-    std::string device_serial;
-    std::string device_mac;
-    std::string device_name;
-    std::string device_interface;
-    std::string device_ip;
-    int gev_packet_size;
-    int connection_loss_total;
-    int complete_buffers_total;
-    int incomplete_buffers_total;
-    int image_receive_timeouts_total;
-    int current_reconnect_trial;
-    bool streaming;
+  std::recursive_mutex updater_mtx;
+  std::string device_model;
+  std::string device_version;
+  std::string device_serial;
+  std::string device_mac;
+  std::string device_name;
+  std::string device_interface;
+  std::string device_ip;
+  int gev_packet_size;
+  int connection_loss_total;
+  int complete_buffers_total;
+  int incomplete_buffers_total;
+  int image_receive_timeouts_total;
+  int current_reconnect_trial;
+  bool streaming;
 };
 
 } // namespace rc

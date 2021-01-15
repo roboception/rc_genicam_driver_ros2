@@ -38,18 +38,17 @@
 
 namespace rc
 {
-CameraParamPublisher::CameraParamPublisher(rclcpp::Node *node, const std::string& frame_id, bool left)
-  : GenICam2RosPublisher(frame_id)
+CameraParamPublisher::CameraParamPublisher(
+  rclcpp::Node * node, const std::string & frame_id,
+  bool left)
+: GenICam2RosPublisher(frame_id)
 {
   // advertise topic
 
-  if (left)
-  {
-    pub=node->create_publisher<rc_common_msgs::msg::CameraParam>("stereo/left/camera_param", 1);
-  }
-  else
-  {
-    pub=node->create_publisher<rc_common_msgs::msg::CameraParam>("stereo/right/camera_param", 1);
+  if (left) {
+    pub = node->create_publisher<rc_common_msgs::msg::CameraParam>("stereo/left/camera_param", 1);
+  } else {
+    pub = node->create_publisher<rc_common_msgs::msg::CameraParam>("stereo/right/camera_param", 1);
   }
 }
 
@@ -58,10 +57,9 @@ bool CameraParamPublisher::used()
   return pub->get_subscription_count() > 0;
 }
 
-void CameraParamPublisher::requiresComponents(int& components, bool&)
+void CameraParamPublisher::requiresComponents(int & components, bool &)
 {
-  if (pub->get_subscription_count() > 0)
-  {
+  if (pub->get_subscription_count() > 0) {
     components |= ComponentIntensity;
   }
 }
@@ -69,21 +67,23 @@ void CameraParamPublisher::requiresComponents(int& components, bool&)
 namespace
 {
 
-template <class T> inline rc_common_msgs::msg::KeyValue getKeyValue(const char *key, T value)
+template<class T>
+inline rc_common_msgs::msg::KeyValue getKeyValue(const char * key, T value)
 {
   rc_common_msgs::msg::KeyValue ret;
 
-  ret.key=key;
-  ret.value=std::to_string(value);
+  ret.key = key;
+  ret.value = std::to_string(value);
 
   return ret;
 }
 
 }
 
-void CameraParamPublisher::publish(const rcg::Buffer* buffer, uint32_t, uint64_t pixelformat)
+void CameraParamPublisher::publish(const rcg::Buffer * buffer, uint32_t, uint64_t pixelformat)
 {
-  if (nodemap && pub->get_subscription_count() > 0 && (pixelformat == Mono8 || pixelformat == YCbCr411_8))
+  if (nodemap && pub->get_subscription_count() > 0 &&
+    (pixelformat == Mono8 || pixelformat == YCbCr411_8))
   {
     uint64_t time = buffer->getTimestampNS();
 
@@ -98,8 +98,7 @@ void CameraParamPublisher::publish(const rcg::Buffer* buffer, uint32_t, uint64_t
 
     std::vector<std::string> lines;
     rcg::getEnum(nodemap, "ChunkLineSelector", lines, true);
-    for (auto&& line : lines)
-    {
+    for (auto && line : lines) {
       rcg::setEnum(nodemap, "ChunkLineSelector", line.c_str(), true);
 
       rc_common_msgs::msg::KeyValue line_source;
@@ -115,22 +114,19 @@ void CameraParamPublisher::publish(const rcg::Buffer* buffer, uint32_t, uint64_t
     param.exposure_time = rcg::getFloat(nodemap, "ChunkExposureTime", 0, 0, true) / 1000000l;
 
     {
-      float noise=rcg::getFloat(nodemap, "ChunkRcNoise", 0, 0, false);
-      bool test=rcg::getBoolean(nodemap, "ChunkRcTest", false);
+      float noise = rcg::getFloat(nodemap, "ChunkRcNoise", 0, 0, false);
+      bool test = rcg::getBoolean(nodemap, "ChunkRcTest", false);
 
-      float out1_reduction=0;
+      float out1_reduction = 0;
 
-      try
-      {
-        out1_reduction=rcg::getFloat(nodemap, "ChunkRcOut1Reduction", 0, 0, true);
-      }
-      catch (const std::exception &)
-      {
+      try {
+        out1_reduction = rcg::getFloat(nodemap, "ChunkRcOut1Reduction", 0, 0, true);
+      } catch (const std::exception &) {
         // can be removed if sensor version must be >= 20.10.1
-        out1_reduction=rcg::getFloat(nodemap, "ChunkRcAdaptiveOut1Reduction", 0, 0, false);
+        out1_reduction = rcg::getFloat(nodemap, "ChunkRcAdaptiveOut1Reduction", 0, 0, false);
       }
 
-      float brightness=rcg::getFloat(nodemap, "ChunkRcBrightness", 0, 0, false);
+      float brightness = rcg::getFloat(nodemap, "ChunkRcBrightness", 0, 0, false);
 
       param.extra_data.clear();
       param.extra_data.push_back(getKeyValue("noise", noise));

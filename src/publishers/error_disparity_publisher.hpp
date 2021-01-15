@@ -46,21 +46,19 @@ namespace rc
 {
 class ErrorDisparityPublisher : public GenICam2RosPublisher
 {
-  public:
+public:
+  ErrorDisparityPublisher(rclcpp::Node * node, const std::string & frame_id);
 
-    ErrorDisparityPublisher(rclcpp::Node *node, const std::string& frame_id);
+  bool used() override;
+  void requiresComponents(int & components, bool & color) override;
 
-    bool used() override;
-    void requiresComponents(int& components, bool& color) override;
+  void publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat) override;
 
-    void publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat) override;
+private:
+  ErrorDisparityPublisher(const ErrorDisparityPublisher &);              // forbidden
+  ErrorDisparityPublisher & operator=(const ErrorDisparityPublisher &);  // forbidden
 
-  private:
-
-    ErrorDisparityPublisher(const ErrorDisparityPublisher&);             // forbidden
-    ErrorDisparityPublisher& operator=(const ErrorDisparityPublisher&);  // forbidden
-
-    image_transport::Publisher pub;
+  image_transport::Publisher pub;
 };
 
 }  // namespace rc

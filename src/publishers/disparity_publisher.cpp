@@ -43,8 +43,8 @@
 namespace rc
 {
 
-DisparityPublisher::DisparityPublisher(rclcpp::Node *node, const std::string& frame_id)
-  : GenICam2RosPublisher(frame_id)
+DisparityPublisher::DisparityPublisher(rclcpp::Node * node, const std::string & frame_id)
+: GenICam2RosPublisher(frame_id)
 {
   pub = node->create_publisher<stereo_msgs::msg::DisparityImage>("stereo/disparity", 1);
 }
@@ -54,21 +54,20 @@ bool DisparityPublisher::used()
   return pub->get_subscription_count() > 0;
 }
 
-void DisparityPublisher::requiresComponents(int& components, bool&)
+void DisparityPublisher::requiresComponents(int & components, bool &)
 {
-  if (pub->get_subscription_count() > 0)
-  {
+  if (pub->get_subscription_count() > 0) {
     components |= ComponentDisparity;
   }
 }
 
-void DisparityPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat)
+void DisparityPublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat)
 {
-  if (nodemap && pub->get_subscription_count() > 0 && pixelformat == Coord3D_C16)
-  {
+  if (nodemap && pub->get_subscription_count() > 0 && pixelformat == Coord3D_C16) {
     // allocate new image message and set meta information
 
-    std::unique_ptr<stereo_msgs::msg::DisparityImage> p = std::make_unique<stereo_msgs::msg::DisparityImage>();
+    std::unique_ptr<stereo_msgs::msg::DisparityImage> p =
+      std::make_unique<stereo_msgs::msg::DisparityImage>();
 
     uint64_t time = buffer->getTimestampNS();
 
@@ -84,8 +83,8 @@ void DisparityPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint6
     float scale = rcg::getFloat(nodemap, "ChunkScan3dCoordinateScale", 0, 0, true);
 
     double mindepth = rcg::getFloat(nodemap, "DepthMinDepth", 0, 0, true);
-    mindepth = std::max(mindepth, 2.5*t);
-    int disprange = static_cast<int>(std::ceil(f*t/mindepth));
+    mindepth = std::max(mindepth, 2.5 * t);
+    int disprange = static_cast<int>(std::ceil(f * t / mindepth));
 
     // prepare size and format of outgoing image
 
@@ -97,29 +96,25 @@ void DisparityPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint6
     p->image.step = p->image.width * sizeof(float);
 
     size_t px = buffer->getXPadding(part);
-    const uint8_t* ps = static_cast<const uint8_t*>(buffer->getBase(part));
+    const uint8_t * ps = static_cast<const uint8_t *>(buffer->getBase(part));
 
     // convert image information
 
     p->image.data.resize(p->image.step * p->image.height);
 
-    float* pt = reinterpret_cast<float*>(&p->image.data[0]);
+    float * pt = reinterpret_cast<float *>(&p->image.data[0]);
     float dmax = 0;
 
     bool bigendian = buffer->isBigEndian();
 
-    for (uint32_t k = 0; k < p->image.height; k++)
-    {
-      if (bigendian)
-      {
-        for (uint32_t i = 0; i < p->image.width; i++)
-        {
+    for (uint32_t k = 0; k < p->image.height; k++) {
+      if (bigendian) {
+        for (uint32_t i = 0; i < p->image.width; i++) {
           uint16_t d = (ps[0] << 8) | ps[1];
 
           *pt = -1.0f;
 
-          if (d != 0)
-          {
+          if (d != 0) {
             *pt = scale * d;
             dmax = std::max(dmax, *pt);
           }
@@ -127,17 +122,13 @@ void DisparityPublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint6
           ps += 2;
           pt++;
         }
-      }
-      else
-      {
-        for (uint32_t i = 0; i < p->image.width; i++)
-        {
+      } else {
+        for (uint32_t i = 0; i < p->image.width; i++) {
           uint16_t d = (ps[1] << 8) | ps[0];
 
           *pt = -1.0f;
 
-          if (d != 0)
-          {
+          if (d != 0) {
             *pt = scale * d;
             dmax = std::max(dmax, *pt);
           }

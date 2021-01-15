@@ -42,33 +42,29 @@
 namespace rc
 {
 
-ImagePublisher::ImagePublisher(rclcpp::Node *node, const std::string& frame_id, bool _left,
-                               bool _color, bool out1_filter)
-  : GenICam2RosPublisher(frame_id)
+ImagePublisher::ImagePublisher(
+  rclcpp::Node * node, const std::string & frame_id, bool _left,
+  bool _color, bool out1_filter)
+: GenICam2RosPublisher(frame_id)
 {
   left = _left;
   color = _color;
 
   std::string name;
 
-  if (left)
-  {
+  if (left) {
     name = "stereo/left/image_rect";
-  }
-  else
-  {
+  } else {
     name = "stereo/right/image_rect";
   }
 
-  if (color)
-  {
+  if (color) {
     name = name + "_color";
   }
 
   pub = image_transport::create_publisher(node, name);
 
-  if (out1_filter)
-  {
+  if (out1_filter) {
     pub_out1_low = image_transport::create_publisher(node, name + "_out1_low");
     pub_out1_high = image_transport::create_publisher(node, name + "_out1_high");
   }
@@ -76,44 +72,44 @@ ImagePublisher::ImagePublisher(rclcpp::Node *node, const std::string& frame_id, 
 
 bool ImagePublisher::used()
 {
-  return pub.getNumSubscribers() > 0 || pub_out1_low.getNumSubscribers() > 0 || pub_out1_high.getNumSubscribers() > 0;
+  return pub.getNumSubscribers() > 0 || pub_out1_low.getNumSubscribers() > 0 ||
+         pub_out1_high.getNumSubscribers() > 0;
 }
 
-void ImagePublisher::requiresComponents(int& components, bool& _color)
+void ImagePublisher::requiresComponents(int & components, bool & _color)
 {
-  if (pub.getNumSubscribers() > 0 || pub_out1_low.getNumSubscribers() > 0 || pub_out1_high.getNumSubscribers() > 0)
+  if (pub.getNumSubscribers() > 0 || pub_out1_low.getNumSubscribers() > 0 ||
+    pub_out1_high.getNumSubscribers() > 0)
   {
-    if (left)
-    {
+    if (left) {
       components |= ComponentIntensity;
-    }
-    else
-    {
+    } else {
       components |= ComponentIntensityCombined;
     }
 
-    if (color)
+    if (color) {
       _color = true;
+    }
   }
 }
 
-void ImagePublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t pixelformat)
+void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t pixelformat)
 {
-  if (nodemap)
-  {
+  if (nodemap) {
     rcg::setEnum(nodemap, "ChunkLineSelector", "Out1", true);
     std::string out1_mode = rcg::getEnum(nodemap, "ChunkLineSource", true);
     bool out1 = rcg::getInteger(nodemap, "ChunkLineStatusAll", 0, 0, true) & 0x1;
 
     bool sub = (pub.getNumSubscribers() > 0);
 
-    if (!out1 && pub_out1_low.getNumSubscribers() > 0)
+    if (!out1 && pub_out1_low.getNumSubscribers() > 0) {
       sub = true;
-    if (out1 && pub_out1_high.getNumSubscribers() > 0)
+    }
+    if (out1 && pub_out1_high.getNumSubscribers() > 0) {
       sub = true;
+    }
 
-    if (sub && (pixelformat == Mono8 || pixelformat == YCbCr411_8))
-    {
+    if (sub && (pixelformat == Mono8 || pixelformat == YCbCr411_8)) {
       // create image and initialize header
 
       std::shared_ptr<sensor_msgs::msg::Image> im = std::make_shared<sensor_msgs::msg::Image>();
@@ -132,54 +128,42 @@ void ImagePublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t 
 
       bool stacked = false;
 
-      if (im->height > im->width)
-      {
+      if (im->height > im->width) {
         stacked = true;
         im->height >>= 1;
       }
 
       // get pointer to image data in buffer
 
-      const uint8_t* ps = static_cast<const uint8_t*>(buffer->getBase(part));
+      const uint8_t * ps = static_cast<const uint8_t *>(buffer->getBase(part));
       size_t pstep = im->width + buffer->getXPadding(part);
 
-      if (pixelformat == YCbCr411_8)
-      {
+      if (pixelformat == YCbCr411_8) {
         pstep = (im->width >> 2) * 6 + buffer->getXPadding(part);
       }
 
-      if (!left)
-      {
-        if (stacked)
-        {
+      if (!left) {
+        if (stacked) {
           ps += pstep * im->height;
-        }
-        else
-        {
+        } else {
           return;  // buffer does not contain a right image
         }
       }
 
       // convert image data
 
-      if (color)  // convert to color
-      {
+      if (color) { // convert to color
         im->encoding = sensor_msgs::image_encodings::RGB8;
         im->step = 3 * im->width * sizeof(uint8_t);
 
         im->data.resize(im->step * im->height);
-        uint8_t* pt = reinterpret_cast<uint8_t*>(&im->data[0]);
+        uint8_t * pt = reinterpret_cast<uint8_t *>(&im->data[0]);
 
-        if (pixelformat == Mono8)  // convert from monochrome
-        {
+        if (pixelformat == Mono8) { // convert from monochrome
           return;  // do not convert from monochrome, skip instead
-        }
-        else if (pixelformat == YCbCr411_8)  // convert from YUV 411
-        {
-          for (uint32_t k = 0; k < im->height; k++)
-          {
-            for (uint32_t i = 0; i < im->width; i += 4)
-            {
+        } else if (pixelformat == YCbCr411_8) { // convert from YUV 411
+          for (uint32_t k = 0; k < im->height; k++) {
+            for (uint32_t i = 0; i < im->width; i += 4) {
               rcg::convYCbCr411toQuadRGB(pt, ps, i);
               pt += 12;
             }
@@ -187,35 +171,26 @@ void ImagePublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t 
             ps += pstep;
           }
         }
-      }
-      else  // convert to monochrome
-      {
+      } else { // convert to monochrome
         im->encoding = sensor_msgs::image_encodings::MONO8;
         im->step = im->width * sizeof(uint8_t);
 
         im->data.resize(im->step * im->height);
-        uint8_t* pt = reinterpret_cast<uint8_t*>(&im->data[0]);
+        uint8_t * pt = reinterpret_cast<uint8_t *>(&im->data[0]);
 
-        if (pixelformat == Mono8)  // copy monochrome image
-        {
-          for (uint32_t k = 0; k < im->height; k++)
-          {
-            for (uint32_t i = 0; i < im->width; i++)
-            {
+        if (pixelformat == Mono8) { // copy monochrome image
+          for (uint32_t k = 0; k < im->height; k++) {
+            for (uint32_t i = 0; i < im->width; i++) {
               *pt++ = ps[i];
             }
 
             ps += pstep;
           }
-        }
-        else if (pixelformat == YCbCr411_8)  // copy monochrome part of YUV 411 image
-        {
-          for (uint32_t k = 0; k < im->height; k++)
-          {
+        } else if (pixelformat == YCbCr411_8) { // copy monochrome part of YUV 411 image
+          for (uint32_t k = 0; k < im->height; k++) {
             int j = 0;
 
-            for (uint32_t i = 0; i < im->width; i += 4)
-            {
+            for (uint32_t i = 0; i < im->width; i += 4) {
               *pt++ = ps[j];
               *pt++ = ps[j + 1];
               *pt++ = ps[j + 3];
@@ -232,13 +207,11 @@ void ImagePublisher::publish(const rcg::Buffer* buffer, uint32_t part, uint64_t 
 
       pub.publish(im);
 
-      if (!out1)
-      {
+      if (!out1) {
         pub_out1_low.publish(im);
       }
 
-      if (out1)
-      {
+      if (out1) {
         pub_out1_high.publish(im);
       }
     }

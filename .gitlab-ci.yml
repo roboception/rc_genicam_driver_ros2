@@ -45,6 +45,7 @@ default:
   stage: test
   script:
     - mkdir build && cd build
+    - touch AMENT_IGNORE
     - cmake ..
     - make -j 4
     - CTEST_OUTPUT_ON_FAILURE=1 make test

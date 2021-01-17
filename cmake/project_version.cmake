@@ -76,6 +76,15 @@ if (GIT_CMD AND NOT "${GIT_TOPLEVEL}" STREQUAL "")
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
         set(GIT_FULL_VERSION 0.0.0+${GIT_COMMIT_COUNT}+g${GIT_SHA1})
     endif ()
+    # check if this is a shallow clone
+    execute_process(COMMAND ${GIT_CMD} rev-parse --absolute-git-dir
+                WORKING_DIRECTORY ${GIT_TOPLEVEL}
+                OUTPUT_VARIABLE GIT_DIR
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (EXISTS "${GIT_DIR}/shallow")
+        message(STATUS "Shallow git repo of depth ${GIT_COMMIT_COUNT}")
+        set(GIT_REPO_IS_SHALLOW true)
+    endif ()
 endif ()
 
 #########################
@@ -98,7 +107,11 @@ endif ()
 if (NOT RC_PROJECT_VERSION)
     # set RC_PROJECT_VERSION to MAJOR.MINOR.PATCH
     # RC_PACKAGE_VERSION can have extra info
-    if (GIT_VERSION)
+    if (GIT_REPO_IS_SHALLOW AND PACKAGE_XML_VERSION)
+        message(STATUS "Using PACKAGE_XML_VERSION as it is a shallow clone (e.g. on ROS buildfarm)")
+        set(RC_PROJECT_VERSION ${PACKAGE_XML_VERSION})
+        set(RC_PACKAGE_VERSION ${RC_PROJECT_VERSION})
+    elseif (GIT_VERSION)
         set(RC_PROJECT_VERSION ${GIT_VERSION})
         set(RC_PACKAGE_VERSION ${GIT_FULL_VERSION})
     elseif (PACKAGE_XML_VERSION)
@@ -117,7 +130,7 @@ if (NOT RC_PACKAGE_VERSION)
 endif ()
 
 # warn if versions don't match
-if (GIT_VERSION AND NOT GIT_VERSION MATCHES ${RC_PROJECT_VERSION})
+if (GIT_VERSION AND NOT GIT_REPO_IS_SHALLOW AND NOT GIT_VERSION MATCHES ${RC_PROJECT_VERSION})
     message(WARNING "Version from git (${GIT_VERSION}) doesn't match RC_PROJECT_VERSION (${RC_PROJECT_VERSION})")
 endif()
 if (PACKAGE_XML_VERSION AND NOT PACKAGE_XML_VERSION MATCHES ${RC_PROJECT_VERSION})

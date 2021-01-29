@@ -13,7 +13,7 @@ default:
   - curl -fsSL http://apt.roboception.de/archive.key | apt-key add -
   - apt-get update -yq
   - if [ "$ROS_DISTRO" = "rolling" ]; then apt-get -y upgrade; fi
-  - apt-get install -y ros-${ROS_DISTRO}-rc-common-msgs rc-genicam-api
+  - apt-get install -y ros-${ROS_DISTRO}-rc-common-msgs
   - rosdep install --from-paths . --ignore-src -r -y --skip-keys="rc_genicam_api"
   - export CMAKE_PREFIX_PATH="/opt/ros/$ROS_DISTRO"
 
@@ -43,7 +43,10 @@ default:
 #############
 .test:
   stage: test
+  variables:
+    RC_GENICAM_API_PACKAGE: rc-genicam-api
   script:
+    - apt-get install -y $RC_GENICAM_API_PACKAGE
     - mkdir build && cd build
     - touch AMENT_IGNORE
     - cmake ..
@@ -74,7 +77,10 @@ default:
 # Debian packaging
 .package:
   stage: deploy
+  variables:
+    RC_GENICAM_API_PACKAGE: rc-genicam-api
   script:
+    - apt-get install -y $RC_GENICAM_API_PACKAGE
     - mkdir build && cd build
     - cmake -DCMAKE_INSTALL_PREFIX="/opt/ros/$ROS_DISTRO" -DCMAKE_BUILD_TYPE=Release ..
     - make -j 4
@@ -137,7 +143,22 @@ test_stable:foxy:amd64:
 test_stable:rolling:amd64:
   <<: *amd64_rolling_job
   extends: .test_stable
+
+# Test against packages in ROS repo
+###################################
+test_ros:foxy:amd64:
+  <<: *amd64_foxy_job
+  extends: .test
   allow_failure: true
+  variables:
+    RC_GENICAM_API_PACKAGE: ros-foxy-rc-genicam-api
+
+test_ros:rolling:amd64:
+  <<: *amd64_rolling_job
+  extends: .test
+  allow_failure: true
+  variables:
+    RC_GENICAM_API_PACKAGE: ros-rolling-rc-genicam-api
 
 # Deploy testing (only on master)
 #################################

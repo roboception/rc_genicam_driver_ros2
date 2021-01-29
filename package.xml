@@ -4,6 +4,7 @@
   <name>rc_genicam_driver</name>
   <version>0.1.1</version>
   <description>Driver for rc_visard sensor from Roboception GmbH</description>
+  <maintainer email="felix.ruess@roboception.de">Felix Ruess</maintainer>
   <maintainer email="heiko.hirschmueller@roboception.de">hirschmu</maintainer>
   <license>BSD</license>
 

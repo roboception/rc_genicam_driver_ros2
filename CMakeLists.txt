@@ -39,7 +39,10 @@ set(DEPS
   rc_common_msgs
   diagnostic_updater
   image_transport
-  RC_GENICAM_API
+)
+
+include_directories(
+  ${RC_GENICAM_API_INCLUDE_DIRS}
 )
 
 add_library(${LIB_NAME} SHARED
@@ -56,10 +59,12 @@ add_library(${LIB_NAME} SHARED
   src/publishers/points2_publisher.cpp
 )
 
-link_directories(${RC_GENICAM_API_LIBRARY_DIRS})
-
 ament_target_dependencies(${LIB_NAME}
   ${DEPS}
+)
+
+target_link_libraries(${LIB_NAME}
+  rc_genicam_api::rc_genicam_api
 )
 
 add_executable(${NODE_NAME}

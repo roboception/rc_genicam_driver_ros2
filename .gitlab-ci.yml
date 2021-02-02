@@ -20,12 +20,6 @@ default:
 #########################
 # Templates using anchors
 #########################
-.amd64_eloquent_t: &amd64_eloquent_job
-  image: ros:eloquent-ros-base-bionic
-  tags:
-    - amd64
-    - docker
-
 .amd64_foxy_t: &amd64_foxy_job
   image: ros:foxy-ros-base-focal
   tags:
@@ -117,10 +111,6 @@ default:
 
 # Test against latest (on every commit)
 #######################################
-test:eloquent:amd64:
-  <<: *amd64_eloquent_job
-  extends: .test_latest
-
 test:foxy:amd64:
   <<: *amd64_foxy_job
   extends: .test_latest
@@ -132,10 +122,6 @@ test:rolling:amd64:
 
 # Test against stable (is allowed to fail)
 ##########################################
-test_stable:eloquent:amd64:
-  <<: *amd64_eloquent_job
-  extends: .test_stable
-
 test_stable:foxy:amd64:
   <<: *amd64_foxy_job
   extends: .test_stable
@@ -162,10 +148,6 @@ test_ros:rolling:amd64:
 
 # Deploy testing (only on master)
 #################################
-package_testing:eloquent:amd64:
-  <<: *amd64_eloquent_job
-  extends: .package_testing
-
 package_testing:foxy:amd64:
   <<: *amd64_foxy_job
   extends: .package_testing
@@ -181,10 +163,6 @@ package_testing:rolling:amd64:
 
 # Test against stable if it is a release
 ########################################
-test_release:eloquent:amd64:
-  <<: *amd64_eloquent_job
-  extends: .test_release
-
 test_release:foxy:amd64:
   <<: *amd64_foxy_job
   extends: .test_release
@@ -196,10 +174,6 @@ test_release:rolling:amd64:
 
 # Deploy stable (only for releases, version tags)
 #################################################
-package_stable:eloquent:amd64:
-  <<: *amd64_eloquent_job
-  extends: .package_stable
-
 package_stable:foxy:amd64:
   <<: *amd64_foxy_job
   extends: .package_stable

@@ -842,7 +842,7 @@ void GenICamDriver::triggerDepthAcquisition(
       res->return_code.message =
         "Triggering stereo matching is only possible if depth_acquisition_mode is set to SingleFrame "
         "or SingleFrameOut1!";
-      RCLCPP_DEBUG(this->get_logger(), res->return_code.message);
+      RCLCPP_DEBUG(this->get_logger(), "%s", res->return_code.message.c_str());
     }
   } else {
     res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::NOT_APPLICABLE;

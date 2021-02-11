@@ -1,3 +1,8 @@
+0.1.4 (2021-02-11)
+------------------
+
+* Accept devices from vendor Roboception or if model is rc_visard or rc_cube
+
 0.1.3 (2021-02-02)
 ------------------
 

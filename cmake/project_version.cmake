@@ -9,17 +9,24 @@
 # patch variable name to store the patch version in
 # extra variable name to store a version suffix in
 function(version_split version major minor patch extra)
-    string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)?" version_valid ${version})
+    string(REGEX MATCH "([0-9]+)(\\.([0-9]+)(\\.([0-9]+)(.*)?)?)?" version_valid ${version})
     if(version_valid)
-        string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)?" "\\1;\\2;\\3;\\4" VERSION_MATCHES ${version})
-        list(GET VERSION_MATCHES 0 version_major)
+        string(REPLACE "." ";" version_split ${version})
+        list(LENGTH version_split version_split_len)
+        list(GET version_split 0 version_major)
         set(${major} ${version_major} PARENT_SCOPE)
-        list(GET VERSION_MATCHES 1 version_minor)
-        set(${minor} ${version_minor} PARENT_SCOPE)
-        list(GET VERSION_MATCHES 2 version_patch)
-        set(${patch} ${version_patch} PARENT_SCOPE)
-        list(GET VERSION_MATCHES 3 version_extra)
-        set(${extra} ${version_extra} PARENT_SCOPE)
+        if (version_split_len GREATER "1")
+            list(GET version_split 1 version_minor)
+            set(${minor} ${version_minor} PARENT_SCOPE)
+        endif()
+        if (version_split_len GREATER "2")
+            list(GET version_split 2 version_patch_extra)
+            string(REGEX REPLACE "([0-9]+)(.*)" "\\1;\\2" version_patch_extra ${version_patch_extra})
+            list(GET version_patch_extra 0 version_patch)
+            set(${patch} ${version_patch} PARENT_SCOPE)
+            list(GET version_patch_extra 1 version_extra)
+            set(${extra} ${version_extra} PARENT_SCOPE)
+        endif()
     else(version_valid)
         message(AUTHOR_WARNING "Bad version ${version}; falling back to 0 (have you made an initial release?)")
         set(${major} "0" PARENT_SCOPE)
@@ -28,6 +35,24 @@ function(version_split version major minor patch extra)
         set(${extra} "" PARENT_SCOPE)
     endif(version_valid)
 endfunction(version_split)
+
+# Bump a version number. The final component of the version number is bumped.
+# E.g.: 2.3 -> 2.4; 2 -> 3; 1.2.3 -> 1.2.4
+# version_in the version to bump
+# version_out variable name to store the bumped version in
+function(version_bump version_in version_out)
+    version_split(${version_in} major minor patch extra)
+    if (patch MATCHES "^[0-9]+$")
+        math(EXPR patch "${patch}+1")
+        set(${version_out} "${major}.${minor}.${patch}" PARENT_SCOPE)
+    elseif (minor MATCHES "^[0-9]+$")
+        math(EXPR minor "${minor}+1")
+        set(${version_out} "${major}.${minor}" PARENT_SCOPE)
+    else()
+        math(EXPR major "${major}+1")
+        set(${version_out} "${major}" PARENT_SCOPE)
+    endif()
+endfunction(version_bump)
 
 ##########################
 # get GIT_VERSION

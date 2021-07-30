@@ -83,7 +83,7 @@ inline rc_common_msgs::msg::KeyValue getKeyValue(const char * key, T value)
 void CameraParamPublisher::publish(const rcg::Buffer * buffer, uint32_t, uint64_t pixelformat)
 {
   if (nodemap && pub->get_subscription_count() > 0 &&
-    (pixelformat == Mono8 || pixelformat == YCbCr411_8))
+    (pixelformat == Mono8 || pixelformat == YCbCr411_8 || pixelformat == RGB8))
   {
     uint64_t time = buffer->getTimestampNS();
 

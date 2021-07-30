@@ -109,7 +109,7 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
       sub = true;
     }
 
-    if (sub && (pixelformat == Mono8 || pixelformat == YCbCr411_8)) {
+    if (sub && (pixelformat == Mono8 || pixelformat == YCbCr411_8 || pixelformat == RGB8)) {
       // create image and initialize header
 
       std::shared_ptr<sensor_msgs::msg::Image> im = std::make_shared<sensor_msgs::msg::Image>();
@@ -141,6 +141,11 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
       if (pixelformat == YCbCr411_8) {
         pstep = (im->width >> 2) * 6 + buffer->getXPadding(part);
       }
+      else if (pixelformat == RGB8)
+      {
+        pstep = 3*im->width + buffer->getXPadding(part);
+      }
+
 
       if (!left) {
         if (stacked) {
@@ -159,18 +164,35 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
         im->data.resize(im->step * im->height);
         uint8_t * pt = reinterpret_cast<uint8_t *>(&im->data[0]);
 
-        if (pixelformat == Mono8) { // convert from monochrome
+        if (pixelformat == Mono8) // convert from monochrome
+        { 
           return;  // do not convert from monochrome, skip instead
-        } else if (pixelformat == YCbCr411_8) { // convert from YUV 411
+        } 
+        else if (pixelformat == YCbCr411_8) // convert from YUV 411
+        { 
           for (uint32_t k = 0; k < im->height; k++) {
             for (uint32_t i = 0; i < im->width; i += 4) {
               rcg::convYCbCr411toQuadRGB(pt, ps, i);
               pt += 12;
             }
-
             ps += pstep;
           }
         }
+        else if (pixelformat == RGB8)
+        {
+          for (uint32_t k = 0; k < im->height; k++)
+          {
+            for (uint32_t i = 0; i < im->width; i++)
+            {
+              *pt++ = *ps++;
+              *pt++ = *ps++;
+              *pt++ = *ps++;
+            }
+
+            ps += buffer->getXPadding(part);
+          }
+        }
+
       } else { // convert to monochrome
         im->encoding = sensor_msgs::image_encodings::MONO8;
         im->step = im->width * sizeof(uint8_t);
@@ -186,7 +208,9 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
 
             ps += pstep;
           }
-        } else if (pixelformat == YCbCr411_8) { // copy monochrome part of YUV 411 image
+        } 
+        else if (pixelformat == YCbCr411_8) // copy monochrome part of YUV 411 image
+        { 
           for (uint32_t k = 0; k < im->height; k++) {
             int j = 0;
 
@@ -201,6 +225,19 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
             ps += pstep;
           }
         }
+        else if (pixelformat == RGB8)
+        {
+          for (uint32_t k = 0; k < im->height; k++)
+          {
+            for (uint32_t i = 0; i < im->width; i++)
+            {
+              *pt++ = static_cast<uint8_t>((9798*ps[0]+19234*ps[1]+3736*ps[2])>>15);
+              ps += 3;
+            }
+            ps += buffer->getXPadding(part);
+          }
+        }
+
       }
 
       // publish message

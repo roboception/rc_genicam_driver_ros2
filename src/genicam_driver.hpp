@@ -106,6 +106,7 @@ private:
   std::map<std::string, std::pair<std::string, std::string>> param_selector;
   OnSetParametersCallbackHandle::SharedPtr param_cb;
 
+  std::string color_format;
   int scomponents;
   bool scolor;
 

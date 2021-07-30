@@ -461,7 +461,15 @@ void GenICamDriver::configure()
     rcg::setEnum(nodemap, "ComponentSelector", "Intensity", true);
     rcg::getEnum(nodemap, "PixelFormat", formats, true);
     for (auto && format : formats) {
-      if (format == "YCbCr411_8") {
+      if (format == "YCbCr411_8") 
+      {
+        color_format = "YCbCr411_8";
+        color = true;
+        break;
+      }
+      if (format == "RGB8")
+      {
+        color_format = "RGB8";
         color = true;
         break;
       }
@@ -694,16 +702,16 @@ void GenICamDriver::updateSubscriptions(bool force)
 
   // enable or disable color
 
-  if (rcolor != scolor || force) {
-    const char * format = "Mono8";
+    if (rcolor != scolor || force) {
+    std::string format = "Mono8";
     if (rcolor) {
-      format = "YCbCr411_8";
+      format = color_format;
     }
 
     rcg::setEnum(nodemap, "ComponentSelector", "Intensity", true);
-    rcg::setEnum(nodemap, "PixelFormat", format, false);
+    rcg::setEnum(nodemap, "PixelFormat", format.c_str(), false);
     rcg::setEnum(nodemap, "ComponentSelector", "IntensityCombined", true);
-    rcg::setEnum(nodemap, "PixelFormat", format, false);
+    rcg::setEnum(nodemap, "PixelFormat", format.c_str(), false);
   }
 
   // store current settings

@@ -83,7 +83,7 @@ void Points2Publisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64
 
       // buffer left and disparity images
 
-      if (pixelformat == Mono8 || pixelformat == YCbCr411_8) {
+      if (pixelformat == Mono8 || pixelformat == YCbCr411_8 || pixelformat == RGB8) {
         // in alternate exposure mode, skip images for texture with out1 == true,
         // i.e. with projected pattern
 

@@ -461,7 +461,7 @@ void GenICamDriver::configure()
     rcg::setEnum(nodemap, "ComponentSelector", "Intensity", true);
     rcg::getEnum(nodemap, "PixelFormat", formats, true);
     for (auto && format : formats) {
-      if (format == "YCbCr411_8") 
+      if (format == "YCbCr411_8")
       {
         color_format = "YCbCr411_8";
         color = true;
@@ -527,7 +527,7 @@ void GenICamDriver::configure()
   declareGenICamParameter("depth_maxdepth", nodemap, "DepthMaxDepth");
   declareGenICamParameter("depth_maxdeptherr", nodemap, "DepthMaxDepthErr");
 
-  declareGenICamParameter("ptp_enabled", nodemap, "GevIEEE1588");
+  declareGenICamParameter("ptp_enabled", nodemap, "PtpEnable");
 
   if (iocontrol_avail) {
     declareGenICamParameter("out1_mode", nodemap, "LineSource", "LineSelector", "Out1");

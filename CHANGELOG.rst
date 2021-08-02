@@ -1,3 +1,11 @@
+0.2.0 (2021-08-02)
+------------------
+
+For supporting rc_sgm_producer:
+
+* Extend color format to RGB8 for ros foxy
+* Using parameter PtpEnable instead of deprecated parameter GevIEEE1588
+
 0.1.4 (2021-02-11)
 ------------------
 

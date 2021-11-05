@@ -307,19 +307,19 @@ bool GenICamDriver::declareGenICamParameter(
             break;
 
           default:
-            RCLCPP_INFO_STREAM(
+            RCLCPP_WARN_STREAM(
               this->get_logger(),
               "Parameter has unsupported type: " << ros_name << " (" << name << ")");
             break;
         }
       } else {
-        RCLCPP_INFO_STREAM(
+        RCLCPP_WARN_STREAM(
           this->get_logger(),
           "Parameter not readable or writable: " << ros_name << " (" << name << ")");
       }
     } else {
-      RCLCPP_INFO_STREAM(
-        this->get_logger(), "Parameter does not exists: " << ros_name << " (" << name << ")");
+      RCLCPP_WARN_STREAM(
+        this->get_logger(), "Parameter does not exist (old firmware?): " << ros_name << " (" << name << ")");
     }
   } catch (const GENICAM_NAMESPACE::GenericException & ex) {
     RCLCPP_WARN_STREAM(this->get_logger(), "Parameter: " << ros_name << " (" << name << ")");
@@ -345,11 +345,11 @@ bool GenICamDriver::declareGenICamParameter(
   {
     param_selector[ros_name] = std::make_pair(selector_name, selector_value);
 
-    // declare paraemter
+    // declare parameter
 
     ret = declareGenICamParameter(ros_name, nodemap, name);
   } else {
-    RCLCPP_INFO_STREAM(this->get_logger(), "Selector of parameter cannot be found or changed: " <<
+    RCLCPP_WARN_STREAM(this->get_logger(), "Selector of parameter cannot be found or changed: " <<
       ros_name << " (" << selector_name << "=" << selector_value << ")");
   }
 

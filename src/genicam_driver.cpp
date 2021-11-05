@@ -526,6 +526,7 @@ void GenICamDriver::configure()
   declareGenICamParameter("depth_mindepth", nodemap, "DepthMinDepth");
   declareGenICamParameter("depth_maxdepth", nodemap, "DepthMaxDepth");
   declareGenICamParameter("depth_maxdeptherr", nodemap, "DepthMaxDepthErr");
+  declareGenICamParameter("depth_exposure_adapt_timeout", nodemap, "DepthExposureAdaptTimeout");
 
   declareGenICamParameter("ptp_enabled", nodemap, "PtpEnable");
 

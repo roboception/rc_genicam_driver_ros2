@@ -1,3 +1,10 @@
+0.2.1 (2021-11-15)
+------------------
+
+* Add exposure_adapt_timeout parameter
+* warn instead of info if parameter can't be set
+* fix line_source and add more extra_data to CameraParam
+
 0.2.0 (2021-08-02)
 ------------------
 

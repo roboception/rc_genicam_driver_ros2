@@ -118,6 +118,7 @@ private:
 
   rclcpp::Service<rc_common_msgs::srv::Trigger>::SharedPtr trigger_service;
 
+  bool iocontrol_avail;
   std::string remote_out1_mode;
   bool update_exp_values;
   bool update_wb_values;

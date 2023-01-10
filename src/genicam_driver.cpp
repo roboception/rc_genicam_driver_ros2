@@ -476,7 +476,7 @@ void GenICamDriver::configure()
     }
   }
 
-  bool iocontrol_avail = nodemap->_GetNode("LineSource")->GetAccessMode() == GenApi::RW;
+  iocontrol_avail = nodemap->_GetNode("LineSource")->GetAccessMode() == GenApi::RW;
 
   // initialise variables for caching some values
 
@@ -1055,7 +1055,7 @@ void GenICamDriver::process()
               out1_mode_on_sensor = remote_out1_mode;
             }
 
-            if (out1_mode_on_sensor != remote_out1_mode) {
+            if (iocontrol_avail && out1_mode_on_sensor != remote_out1_mode) {
               remote_out1_mode = out1_mode_on_sensor;
               set_parameter(rclcpp::Parameter("out1_mode", out1_mode_on_sensor));
             }

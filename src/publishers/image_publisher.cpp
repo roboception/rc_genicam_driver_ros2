@@ -97,7 +97,6 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
 {
   if (nodemap) {
     rcg::setEnum(nodemap, "ChunkLineSelector", "Out1", true);
-    std::string out1_mode = rcg::getEnum(nodemap, "ChunkLineSource", true);
     bool out1 = rcg::getInteger(nodemap, "ChunkLineStatusAll", 0, 0, true) & 0x1;
 
     bool sub = (pub.getNumSubscribers() > 0);
@@ -165,11 +164,11 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
         uint8_t * pt = reinterpret_cast<uint8_t *>(&im->data[0]);
 
         if (pixelformat == Mono8) // convert from monochrome
-        { 
+        {
           return;  // do not convert from monochrome, skip instead
-        } 
+        }
         else if (pixelformat == YCbCr411_8) // convert from YUV 411
-        { 
+        {
           for (uint32_t k = 0; k < im->height; k++) {
             for (uint32_t i = 0; i < im->width; i += 4) {
               rcg::convYCbCr411toQuadRGB(pt, ps, i);
@@ -208,9 +207,9 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
 
             ps += pstep;
           }
-        } 
+        }
         else if (pixelformat == YCbCr411_8) // copy monochrome part of YUV 411 image
-        { 
+        {
           for (uint32_t k = 0; k < im->height; k++) {
             int j = 0;
 

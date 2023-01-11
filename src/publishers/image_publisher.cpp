@@ -243,11 +243,11 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
 
       pub.publish(im);
 
-      if (!out1) {
+      if (pub_out1_low && !out1) {
         pub_out1_low.publish(im);
       }
 
-      if (out1) {
+      if (pub_out1_high && out1) {
         pub_out1_high.publish(im);
       }
     }

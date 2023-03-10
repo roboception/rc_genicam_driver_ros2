@@ -506,6 +506,7 @@ void GenICamDriver::configure()
   declareGenICamParameter("camera_exp_offset_y", nodemap, "ExposureRegionOffsetY");
   declareGenICamParameter("camera_exp_value", nodemap, "ExposureTime");
   declareGenICamParameter("camera_gain_value", nodemap, "Gain", "GainSelector", "All");
+  declareGenICamParameter("camera_gamma", nodemap, "Gamma");
 
   if (color) {
     declareGenICamParameter("camera_wb_auto", nodemap, "BalanceWhiteAuto");

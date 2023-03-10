@@ -1,3 +1,12 @@
+0.3.0 (2023-03-10)
+------------------
+
+* Replaced parameter camera_exp_auto by camera_exp_control and camera_exp_auto_mode for consistency
+* Change parameters camera_exp_max and camera_exp_value so unit seconds for consistency
+* Added Gamma parameter
+* only publish high/low if the publisher exists
+* fix if iocontrol is not available
+
 0.2.1 (2021-11-15)
 ------------------
 

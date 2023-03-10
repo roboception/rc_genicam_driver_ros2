@@ -75,9 +75,12 @@ is old and does not offer the parameter.
   Publishing frames will be slowed down depending on this setting. Setting
   it higher than the real framerate of the specific device has no effect.
 
-* `camera_exp_auto`: If true, then the exposure time is chosen automatically,
-  up to exp_max as maximum. If false, then exp_value is used as exposure
-  time in seconds.
+* `camera_exp_auto`: This parameter has been removed. Please use
+  camera_exp_control instead.
+
+* `camera_exp_control`: Expose control mode which can be "Manual" for setting
+  exposure time and gain via camera_exp_value and camera_gain_value, "Auto"
+  for auto exposure or "HDR" for high dynamic range mode. Default: Auto.
 
 * `camera_exp_auto_mode`
   Auto-exposure mode which can be "Normal", "Out1High" or "AdaptiveOut1".
@@ -98,6 +101,8 @@ is old and does not offer the parameter.
 * `camera_exp_value`: Exposure time in seconds if exp_auto is false.
 
 * `camera_gain_value`: Gain factor in decibel if exp_auto is false.
+
+* `camera_gamma`: Gamma factor. Default: 1.0.
 
 * Auto exposure region: Definition of a region in the left image,
   if the region has zero size or is outside the image,

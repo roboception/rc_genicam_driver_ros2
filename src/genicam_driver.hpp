@@ -69,12 +69,14 @@ public:
 private:
   bool declareGenICamParameter(
     const std::string & ros_name,
-    const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name);
+    const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name,
+    const char *description=0, double float_scale=1.0);
 
   bool declareGenICamParameter(
     const std::string & ros_name,
     const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name,
-    const std::string & selector_name, const std::string & selector_value);
+    const std::string & selector_name, const std::string & selector_value,
+    const char *description=0, double float_scale=1.0);
 
   void configure();
   void cleanup();
@@ -103,6 +105,7 @@ private:
 
   std::recursive_mutex param_mtx;
   std::map<std::string, std::string> param;
+  std::map<std::string, double> param_float_scale;
   std::map<std::string, std::pair<std::string, std::string>> param_selector;
   OnSetParametersCallbackHandle::SharedPtr param_cb;
 

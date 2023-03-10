@@ -200,7 +200,8 @@ void split(
 
 bool GenICamDriver::declareGenICamParameter(
   const std::string & ros_name,
-  const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name)
+  const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name,
+  const char *description, double float_scale)
 {
   bool ret = false;
 
@@ -212,7 +213,15 @@ bool GenICamDriver::declareGenICamParameter(
     if (node != 0) {
       if (GenApi::IsReadable(node) && GenApi::IsWritable(node)) {
         rcl_interfaces::msg::ParameterDescriptor param_descr;
-        param_descr.description = node->GetDescription();
+
+        if (description)
+        {
+          param_descr.description = description;
+        }
+        else
+        {
+          param_descr.description = node->GetDescription();
+        }
 
         switch (node->GetPrincipalInterfaceType()) {
           case GenApi::intfIBoolean:
@@ -253,18 +262,19 @@ bool GenICamDriver::declareGenICamParameter(
 
               rcl_interfaces::msg::FloatingPointRange float_range;
 
-              float_range.from_value = p->GetMin();
-              float_range.to_value = p->GetMax();
+              float_range.from_value = std::round(1e6*p->GetMin()/float_scale)/1e6;
+              float_range.to_value = std::round(1e6*p->GetMax()/float_scale)/1e6;
 
               float_range.step = 0;
               if (p->GetIncMode() == GenApi::fixedIncrement) {
-                float_range.step = p->GetInc();
+                float_range.step = p->GetInc()/float_scale;
               }
 
               param_descr.floating_point_range.push_back(float_range);
 
               param[ros_name] = name;
-              declare_parameter(ros_name, p->GetValue(false, false), param_descr);
+              param_float_scale[ros_name] = float_scale;
+              declare_parameter(ros_name, p->GetValue(false, false)/float_scale, param_descr);
               ret = true;
             }
             break;
@@ -331,7 +341,8 @@ bool GenICamDriver::declareGenICamParameter(
 bool GenICamDriver::declareGenICamParameter(
   const std::string & ros_name,
   const std::shared_ptr<GenApi::CNodeMapRef> & nodemap, const std::string & name,
-  const std::string & selector_name, const std::string & selector_value)
+  const std::string & selector_name, const std::string & selector_value,
+  const char *description, double float_scale)
 {
   std::lock_guard<std::recursive_mutex> lock(param_mtx);
   bool ret = false;
@@ -347,7 +358,7 @@ bool GenICamDriver::declareGenICamParameter(
 
     // declare parameter
 
-    ret = declareGenICamParameter(ros_name, nodemap, name);
+    ret = declareGenICamParameter(ros_name, nodemap, name, description, float_scale);
   } else {
     RCLCPP_WARN_STREAM(this->get_logger(), "Selector of parameter cannot be found or changed: " <<
       ros_name << " (" << selector_name << "=" << selector_value << ")");
@@ -497,14 +508,14 @@ void GenICamDriver::configure()
 
   declareGenICamParameter("camera_fps", nodemap, "AcquisitionFrameRate");
   declareGenICamParameter("camera_exp_auto", nodemap, "ExposureAuto");
-  declareGenICamParameter("camera_exp_max", nodemap, "ExposureTimeAutoMax");
+  declareGenICamParameter("camera_exp_max", nodemap, "ExposureTimeAutoMax", "Maximum exposure time in seconds", 1000000);
   declareGenICamParameter("camera_exp_auto_average_max", nodemap, "RcExposureAutoAverageMax");
   declareGenICamParameter("camera_exp_auto_average_min", nodemap, "RcExposureAutoAverageMin");
   declareGenICamParameter("camera_exp_width", nodemap, "ExposureRegionWidth");
   declareGenICamParameter("camera_exp_height", nodemap, "ExposureRegionHeight");
   declareGenICamParameter("camera_exp_offset_x", nodemap, "ExposureRegionOffsetX");
   declareGenICamParameter("camera_exp_offset_y", nodemap, "ExposureRegionOffsetY");
-  declareGenICamParameter("camera_exp_value", nodemap, "ExposureTime");
+  declareGenICamParameter("camera_exp_value", nodemap, "ExposureTime", "Exposure time in seconds", 1000000);
   declareGenICamParameter("camera_gain_value", nodemap, "Gain", "GainSelector", "All");
   declareGenICamParameter("camera_gamma", nodemap, "Gamma");
 
@@ -789,7 +800,10 @@ rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(
           break;
 
         case rclcpp::PARAMETER_DOUBLE:
-          rcg::setFloat(nodemap, name.c_str(), p[i].as_double(), true);
+          {
+            double scale = param_float_scale.at(p[i].get_name());
+            rcg::setFloat(nodemap, name.c_str(), scale*p[i].as_double(), true);
+          }
           break;
 
         case rclcpp::PARAMETER_STRING:
@@ -1026,6 +1040,7 @@ void GenICamDriver::process()
               update_exp_values = false;
 
               double exp = rcg::getFloat(nodemap, "ExposureTime", 0, 0, true, true);
+              exp/=param_float_scale["camera_exp_value"];
               set_parameter(rclcpp::Parameter("camera_exp_value", exp));
 
               rcg::setEnum(nodemap, "GainSelector", "All", false);

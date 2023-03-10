@@ -495,6 +495,35 @@ void GenICamDriver::configure()
   update_exp_values = false;
   update_wb_values = false;
 
+  // Represent GenICam parameter ExposureAuto with ROS parameters
+  // camera_exp_control and camera_exp_auto_mode as in RestAPI interface
+  // of Roboception devices
+
+  {
+    std::lock_guard<std::recursive_mutex> lock(param_mtx);
+
+    std::string exp_auto=rcg::getString(nodemap, "ExposureAuto", false);
+
+    rcl_interfaces::msg::ParameterDescriptor param_descr;
+    param_descr.description = "Exposure control mode: [Manual, Auto, HDR]";
+    param_descr.additional_constraints = "Manual|Auto|HDR";
+
+    std::string val="Auto";
+    if (exp_auto == "Off") val="Manual";
+    if (exp_auto == "HDR") val="HDR";
+
+    declare_parameter("camera_exp_control", val, param_descr);
+
+    param_descr.description = "Auto-exposure mode: [Normal, Out1High, AdaptiveOut1]";
+    param_descr.additional_constraints = "Normal|Out1High|AdaptiveOut1";
+
+    val="Normal";
+    if (exp_auto == "Out1High") val="Out1High";
+    if (exp_auto == "AdaptiveOut1") val="AdaptiveOut1";
+
+    declare_parameter("camera_exp_auto_mode", val, param_descr);
+  }
+
   // register parameter callback
 
   param_cb = add_on_set_parameters_callback(std::bind(&GenICamDriver::paramCallback, this, _1));
@@ -507,7 +536,6 @@ void GenICamDriver::configure()
   // it.
 
   declareGenICamParameter("camera_fps", nodemap, "AcquisitionFrameRate");
-  declareGenICamParameter("camera_exp_auto", nodemap, "ExposureAuto");
   declareGenICamParameter("camera_exp_max", nodemap, "ExposureTimeAutoMax", "Maximum exposure time in seconds", 1000000);
   declareGenICamParameter("camera_exp_auto_average_max", nodemap, "RcExposureAutoAverageMax");
   declareGenICamParameter("camera_exp_auto_average_min", nodemap, "RcExposureAutoAverageMin");
@@ -746,26 +774,76 @@ rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(
   ret.successful = true;
 
   for (size_t i = 0; i < p.size(); i++) {
-    // signal processing thread to update manual exposure or white balancing
-    // values if automatic has been turned off
+    // signal processing thread to update exposure and gain values if automatic
+    // has been turned off
 
-    if (p[i].get_name() == "camera_exp_auto" && p[i].get_type() == rclcpp::PARAMETER_STRING &&
-      p[i].as_string() == "Off")
-    {
+    if (p[i].get_name() == "camera_exp_control" &&
+        (p[i].as_string() == "Manual" || p[i].as_string() == "HDR")) {
       update_exp_values = true;
     }
 
+    // translate camera_exp_control and camera_exp_auto_mode parameters into
+    // GenICam parameter ExposureAuto
+
+    if (p[i].get_name() == "camera_exp_control" || p[i].get_name() == "camera_exp_auto_mode") {
+      std::string exp_control, exp_auto_mode;
+
+      if (p[i].get_name() == "camera_exp_control") {
+        exp_control=p[i].as_string();
+      } else {
+        exp_control=get_parameter(std::string("camera_exp_control")).as_string();
+      }
+
+      if (p[i].get_name() == "camera_exp_auto_mode") {
+        exp_auto_mode=p[i].as_string();
+      } else {
+        exp_auto_mode=get_parameter(std::string("camera_exp_auto_mode")).as_string();
+      }
+
+      std::string val="Auto";
+      if (exp_control == "Manual") {
+        val="Off";
+      } else if (exp_control == "HDR") {
+        val="HDR";
+      } else if (exp_control == "Auto") {
+        if (exp_auto_mode == "Normal") {
+          val="Continuous";
+        } else if (exp_auto_mode == "Out1High" || exp_auto_mode == "AdaptiveOut1") {
+          val=exp_auto_mode;
+        } else {
+          RCLCPP_WARN_STREAM(this->get_logger(), "Ignoring illegal value '" << exp_auto_mode <<
+            "' of parameter camera_exp_auto_mode");
+          continue;
+        }
+      } else {
+        RCLCPP_WARN_STREAM(this->get_logger(), "Ignoring illegal value '" << exp_control <<
+          "' of parameter camera_exp_control");
+        continue;
+      }
+
+      try
+      {
+        rcg::setEnum(nodemap, "ExposureAuto", val.c_str(), true);
+      } catch (const std::exception & ex) {
+        RCLCPP_WARN_STREAM(this->get_logger(), "Cannot set parameter ExposureAuto to '" << val <<
+          "'. Check if device supports this value: " << ex.what());
+      }
+
+      continue;
+    }
+
+    // signal processing thread to update white balancing values if automatic
+    // has been turned off
+
     if (p[i].get_name() == "camera_wb_auto" && p[i].get_type() == rclcpp::PARAMETER_STRING &&
-      p[i].as_string() == "Off")
-    {
+      p[i].as_string() == "Off") {
       update_wb_values = true;
     }
 
     // skip if value is cached one
 
     if (p[i].get_name() == "out1_mode" && p[i].get_type() == rclcpp::PARAMETER_STRING &&
-      p[i].as_string() == remote_out1_mode)
-    {
+      p[i].as_string() == remote_out1_mode) {
       continue;
     }
 

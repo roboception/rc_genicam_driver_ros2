@@ -1131,12 +1131,12 @@ void GenICamDriver::process()
 
               if (rcg::setEnum(nodemap, "BalanceRatioSelector", "Red", false)) {
                 double ratio = rcg::getFloat(nodemap, "BalanceRatio", 0, 0, true, true);
-                set_parameter(rclcpp::Parameter("camera_wb_red", ratio));
+                set_parameter(rclcpp::Parameter("camera_wb_ratio_red", ratio));
               }
 
               if (rcg::setEnum(nodemap, "BalanceRatioSelector", "Blue", false)) {
                 double ratio = rcg::getFloat(nodemap, "BalanceRatio", 0, 0, true, true);
-                set_parameter(rclcpp::Parameter("camera_wb_blue", ratio));
+                set_parameter(rclcpp::Parameter("camera_wb_ratio_blue", ratio));
               }
             }
 

@@ -101,7 +101,7 @@ GenICamDriver::GenICamDriver(const rclcpp::NodeOptions & options)
   device_descr.description = "Device ID which can be '*' (default) if only one device is connected";
   device_descr.additional_constraints = "[[<interface>]:]<serial>|<name>";
   device_descr.read_only = true;
-  device_descr.dynamic_typing = true;
+  device_descr.dynamic_typing = true; // Without this, undeclare_parameter() throws in Galactic onward.
 
   declare_parameter("device", std::string("*"), device_descr);
 
@@ -214,7 +214,7 @@ bool GenICamDriver::declareGenICamParameter(
     if (node != 0) {
       if (GenApi::IsReadable(node) && GenApi::IsWritable(node)) {
         rcl_interfaces::msg::ParameterDescriptor param_descr;
-        param_descr.dynamic_typing = true;
+        param_descr.dynamic_typing = true; // Without this, undeclare_parameter() throws in Galactic onward.
 
         if (description)
         {
@@ -514,7 +514,7 @@ void GenICamDriver::configure()
     rcl_interfaces::msg::ParameterDescriptor param_descr;
     param_descr.description = "Exposure control mode: [Manual, Auto, HDR]";
     param_descr.additional_constraints = "Manual|Auto|HDR";
-    param_descr.dynamic_typing = true;
+    param_descr.dynamic_typing = true; // Without this, undeclare_parameter() throws in Galactic onward.
 
     std::string val="Auto";
     if (exp_auto == "Off") val="Manual";

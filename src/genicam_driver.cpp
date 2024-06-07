@@ -661,6 +661,8 @@ void GenICamDriver::cleanup()
 
   // undeclare all parameters
 
+/* undeclaring results in an exception, so skip this
+
   for (std::map<std::string, std::string>::iterator it = param.begin(); it != param.end(); ++it) {
     try {
       undeclare_parameter(it->first);
@@ -668,6 +670,7 @@ void GenICamDriver::cleanup()
       RCLCPP_WARN_STREAM(this->get_logger(), "Cannot remove parameter: " << ex.what());
     }
   }
+*/
 
   param.clear();
   param_selector.clear();

@@ -907,9 +907,8 @@ rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(
           break;
       }
     } catch (const std::out_of_range &) {
-      ret.successful = false;
-      ret.reason = "Internal error: unknown parameter " + p.get_name();
-      break;
+      // permitted as this callback may also be called by parameters that we do
+      // not manage ourselves
     } catch (const std::exception & ex) {
       ret.successful = false;
       ret.reason = "Cannot set parameter " + p.get_name() + ": " + ex.what();

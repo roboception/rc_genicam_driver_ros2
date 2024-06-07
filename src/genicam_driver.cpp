@@ -274,7 +274,12 @@ bool GenICamDriver::declareGenICamParameter(
 
               param[ros_name] = name;
               param_float_scale[ros_name] = float_scale;
-              declare_parameter(ros_name, p->GetValue(false, false)/float_scale, param_descr);
+
+              double value=p->GetValue(false, false)/float_scale;
+              value=std::max(value, float_range.from_value);
+              value=std::min(value, float_range.to_value);
+
+              declare_parameter(ros_name, value, param_descr);
               ret = true;
             }
             break;

@@ -1,3 +1,11 @@
+0.3.1 (2024-06-07)
+------------------
+
+* Fix: parameter 'camera_wb_red' cannot be set
+* Fixed limiting float parameters to avoid errors due to rounding
+* Fix: don't treat unknown parameters as error in the parameter callback (e.g. for new enable_pub_plugins param injected by image_transport)
+* Fix: Declaring parameters dynamic so that undeclaring works on cleanup
+
 0.3.0 (2023-03-10)
 ------------------
 

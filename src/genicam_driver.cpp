@@ -101,6 +101,7 @@ GenICamDriver::GenICamDriver(const rclcpp::NodeOptions & options)
   device_descr.description = "Device ID which can be '*' (default) if only one device is connected";
   device_descr.additional_constraints = "[[<interface>]:]<serial>|<name>";
   device_descr.read_only = true;
+  device_descr.dynamic_typing = true;
 
   declare_parameter("device", std::string("*"), device_descr);
 
@@ -213,6 +214,7 @@ bool GenICamDriver::declareGenICamParameter(
     if (node != 0) {
       if (GenApi::IsReadable(node) && GenApi::IsWritable(node)) {
         rcl_interfaces::msg::ParameterDescriptor param_descr;
+        param_descr.dynamic_typing = true;
 
         if (description)
         {
@@ -512,6 +514,7 @@ void GenICamDriver::configure()
     rcl_interfaces::msg::ParameterDescriptor param_descr;
     param_descr.description = "Exposure control mode: [Manual, Auto, HDR]";
     param_descr.additional_constraints = "Manual|Auto|HDR";
+    param_descr.dynamic_typing = true;
 
     std::string val="Auto";
     if (exp_auto == "Off") val="Manual";
@@ -661,8 +664,6 @@ void GenICamDriver::cleanup()
 
   // undeclare all parameters
 
-/* undeclaring results in an exception, so skip this
-
   for (std::map<std::string, std::string>::iterator it = param.begin(); it != param.end(); ++it) {
     try {
       undeclare_parameter(it->first);
@@ -670,7 +671,6 @@ void GenICamDriver::cleanup()
       RCLCPP_WARN_STREAM(this->get_logger(), "Cannot remove parameter: " << ex.what());
     }
   }
-*/
 
   param.clear();
   param_selector.clear();

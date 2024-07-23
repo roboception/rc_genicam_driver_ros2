@@ -74,7 +74,7 @@ void Points2Publisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64
       uint64_t tolerance_ns;
 
       if (out1_mode == "ExposureAlternateActive") {
-        tolerance_ns = static_cast<uint64_t>(0.050 * 1000000000ull);
+        tolerance_ns = static_cast<uint64_t>(1.0 * 1000000000ull);
       } else {
         tolerance_ns = 0;
       }

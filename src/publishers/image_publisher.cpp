@@ -230,7 +230,7 @@ void ImagePublisher::publish(const rcg::Buffer * buffer, uint32_t part, uint64_t
           {
             for (uint32_t i = 0; i < im->width; i++)
             {
-              *pt++ = static_cast<uint8_t>((9798*ps[0]+19234*ps[1]+3736*ps[2])>>15);
+              *pt++ = static_cast<uint8_t>((9798*ps[0]+19234*ps[1]+3736*ps[2]+16384)>>15);
               ps += 3;
             }
             ps += buffer->getXPadding(part);

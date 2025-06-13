@@ -21,13 +21,19 @@ default:
 # Templates using anchors
 #########################
 .amd64_humble_t: &amd64_humble_job
-  image: ros:humble-ros-base
+  image: ros:humble-ros-base-jammy
+  tags:
+    - amd64
+    - docker
+
+.amd64_jazzy_t: &amd64_jazzy_job
+  image: ros:jazzy-ros-base-noble
   tags:
     - amd64
     - docker
 
 .amd64_rolling_t: &amd64_rolling_job
-  image: ros:rolling-ros-base
+  image: ros:rolling-ros-base-noble
   tags:
     - amd64
     - docker
@@ -109,6 +115,10 @@ test:humble:amd64:
   <<: *amd64_humble_job
   extends: .test_latest
 
+test:jazzy:amd64:
+  <<: *amd64_jazzy_job
+  extends: .test_latest
+
 test:rolling:amd64:
   <<: *amd64_rolling_job
   extends: .test_latest
@@ -120,6 +130,10 @@ test_stable:humble:amd64:
   <<: *amd64_humble_job
   extends: .test_stable
 
+test_stable:jazzy:amd64:
+  <<: *amd64_jazzy_job
+  extends: .test_stable
+
 test_stable:rolling:amd64:
   <<: *amd64_rolling_job
   extends: .test_stable
@@ -128,6 +142,10 @@ test_stable:rolling:amd64:
 #################################
 package_testing:humble:amd64:
   <<: *amd64_humble_job
+  extends: .package_testing
+
+package_testing:jazzy:amd64:
+  <<: *amd64_jazzy_job
   extends: .package_testing
 
 package_testing:rolling:amd64:
@@ -145,6 +163,10 @@ test_release:humble:amd64:
   <<: *amd64_humble_job
   extends: .test_release
 
+test_release:jazzy:amd64:
+  <<: *amd64_jazzy_job
+  extends: .test_release
+
 test_release:rolling:amd64:
   <<: *amd64_rolling_job
   extends: .test_release
@@ -154,6 +176,10 @@ test_release:rolling:amd64:
 #################################################
 package_stable:humble:amd64:
   <<: *amd64_humble_job
+  extends: .package_stable
+
+package_stable:jazzy:amd64:
+  <<: *amd64_jazzy_job
   extends: .package_stable
 
 package_stable:rolling:amd64:

@@ -1,3 +1,9 @@
+0.3.2 (2025-07-31)
+------------------
+
+* Increased tolerance for alternate exposure mode to 1 second
+* Fixed rounding when converting color to monochrome
+
 0.3.1 (2024-06-07)
 ------------------
 

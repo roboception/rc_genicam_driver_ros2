@@ -19,31 +19,17 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(stereo_msgs REQUIRED)
-find_package(rc_common_msgs REQUIRED)
-find_package(diagnostic_updater REQUIRED)
-find_package(image_transport REQUIRED)
+find_package(rclcpp CONFIG REQUIRED)
+find_package(rclcpp_components CONFIG REQUIRED)
+find_package(sensor_msgs CONFIG REQUIRED)
+find_package(stereo_msgs CONFIG REQUIRED)
+find_package(rc_common_msgs CONFIG REQUIRED)
+find_package(diagnostic_updater CONFIG REQUIRED)
+find_package(image_transport CONFIG REQUIRED)
 find_package(RC_GENICAM_API 2.4.4 REQUIRED)
 
 set(NODE_NAME rc_genicam_driver)
 set(LIB_NAME ${NODE_NAME}_core)
-
-set(DEPS
-  rclcpp
-  rclcpp_components
-  sensor_msgs
-  stereo_msgs
-  rc_common_msgs
-  diagnostic_updater
-  image_transport
-)
-
-include_directories(
-  ${RC_GENICAM_API_INCLUDE_DIRS}
-)
 
 add_library(${LIB_NAME} SHARED
   src/genicam_driver.cpp
@@ -59,18 +45,27 @@ add_library(${LIB_NAME} SHARED
   src/publishers/points2_publisher.cpp
 )
 
-ament_target_dependencies(${LIB_NAME}
-  ${DEPS}
+target_include_directories(${LIB_NAME} PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include>"
+  ${RC_GENICAM_API_INCLUDE_DIRS}
 )
 
-target_link_libraries(${LIB_NAME}
+target_link_libraries(${LIB_NAME} PUBLIC
+  rclcpp::rclcpp
+  rclcpp_components::component
+  diagnostic_updater::diagnostic_updater
+  image_transport::image_transport
   rc_genicam_api::rc_genicam_api
+  # Message targets use the ${package_TARGETS} variable
+  ${sensor_msgs_TARGETS}
+  ${stereo_msgs_TARGETS}
+  ${rc_common_msgs_TARGETS}
 )
 
 add_executable(${NODE_NAME}
   src/genicam_driver_main.cpp
 )
-
 target_link_libraries(${NODE_NAME} ${LIB_NAME})
 
 rclcpp_components_register_nodes(${LIB_NAME} "rc::GenICamDriver")
@@ -92,8 +87,16 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_libraries(${LIB_NAME})
-ament_export_dependencies(${DEPS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  stereo_msgs
+  rc_common_msgs
+  diagnostic_updater
+  image_transport
+)
 ament_package()
 
 ######################################

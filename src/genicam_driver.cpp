@@ -554,6 +554,7 @@ void GenICamDriver::configure()
   declareGenICamParameter("camera_exp_value", nodemap, "ExposureTime", "Exposure time in seconds", 1000000);
   declareGenICamParameter("camera_gain_value", nodemap, "Gain", "GainSelector", "All");
   declareGenICamParameter("camera_gamma", nodemap, "Gamma");
+  declareGenICamParameter("camera_binning", nodemap, "BinningHorizontal");
 
   if (color) {
     declareGenICamParameter("camera_wb_auto", nodemap, "BalanceWhiteAuto");

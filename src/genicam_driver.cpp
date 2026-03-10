@@ -442,9 +442,9 @@ void GenICamDriver::configure()
 
     device_interface = dev->getParent()->getID();
     device_serial = dev->getSerialNumber();
-    device_mac = rcg::getString(nodemap, "GevMACAddress", true);
+    device_mac = rcg::getString(nodemap, "GevMACAddress", false);
     device_name = rcg::getString(nodemap, "DeviceUserID", true);
-    device_ip = rcg::getString(nodemap, "GevCurrentIPAddress", true);
+    device_ip = rcg::getString(nodemap, "GevCurrentIPAddress", false);
 
     updater.setHardwareID(device_serial);
 

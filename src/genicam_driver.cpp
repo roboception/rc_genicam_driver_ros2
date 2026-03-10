@@ -1078,7 +1078,8 @@ void GenICamDriver::process()
               std::lock_guard<std::recursive_mutex> lock(param_mtx);
 
               if (gev_packet_size == 0) {
-                gev_packet_size = rcg::getInteger(nodemap, "GevSCPSPacketSize", 0, 0, true, false);
+                gev_packet_size = rcg::getInteger(nodemap, "GevSCPSPacketSize", 0, 0, false, false);
+                if (gev_packet_size == 0) gev_packet_size=-1;
               }
 
               // attach buffer to nodemap to access chunk data

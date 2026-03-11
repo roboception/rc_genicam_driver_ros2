@@ -556,10 +556,10 @@ void GenICamDriver::configure()
   declareGenICamParameter("camera_gamma", nodemap, "Gamma");
   declareGenICamParameter("camera_binning", nodemap, "BinningHorizontal");
 
-  declareGenICamParameter("trigger_source", nodemap, "TriggerSource");
-  declareGenICamParameter("trigger_activation", nodemap, "TriggerActivation");
-  declareGenICamParameter("trigger_delay", nodemap, "TriggerDelay");
-  declareGenICamParameter("trigger_mode", nodemap, "TriggerMode");
+  declareGenICamParameter("camera_trigger_source", nodemap, "TriggerSource");
+  declareGenICamParameter("camera_trigger_activation", nodemap, "TriggerActivation");
+  declareGenICamParameter("camera_trigger_delay", nodemap, "TriggerDelay");
+  declareGenICamParameter("camera_trigger_mode", nodemap, "TriggerMode");
 
   if (color) {
     declareGenICamParameter("camera_wb_auto", nodemap, "BalanceWhiteAuto");

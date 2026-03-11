@@ -932,13 +932,13 @@ rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(
           ret.reason = "Internal error: Unknown type of parameter " + p.get_name();
           break;
       }
-    } catch (const std::out_of_range &) {
+    } catch (const std::out_of_range &ex) {
       // permitted as this callback may also be called by parameters that we do
       // not manage ourselves
+      RCLCPP_WARN(this->get_logger(), ex.what());
     } catch (const std::exception & ex) {
-      ret.successful = false;
-      ret.reason = "Cannot set parameter " + p.get_name() + ": " + ex.what();
-      break;
+      // permit this to make it more robust, but report that something went wrong
+      RCLCPP_WARN(this->get_logger(), ex.what());
     }
   }
 

@@ -330,12 +330,12 @@ bool GenICamDriver::declareGenICamParameter(
             break;
         }
       } else {
-        RCLCPP_WARN_STREAM(
+        RCLCPP_INFO_STREAM(
           this->get_logger(),
           "Parameter not readable or writable: " << ros_name << " (" << name << ")");
       }
     } else {
-      RCLCPP_WARN_STREAM(
+      RCLCPP_INFO_STREAM(
         this->get_logger(), "Parameter does not exist (old firmware?): " << ros_name << " (" << name << ")");
     }
   } catch (const GENICAM_NAMESPACE::GenericException & ex) {
@@ -556,6 +556,11 @@ void GenICamDriver::configure()
   declareGenICamParameter("camera_gamma", nodemap, "Gamma");
   declareGenICamParameter("camera_binning", nodemap, "BinningHorizontal");
 
+  declareGenICamParameter("trigger_source", nodemap, "TriggerSource");
+  declareGenICamParameter("trigger_activation", nodemap, "TriggerActivation");
+  declareGenICamParameter("trigger_delay", nodemap, "TriggerDelay");
+  declareGenICamParameter("trigger_mode", nodemap, "TriggerMode");
+
   if (color) {
     declareGenICamParameter("camera_wb_auto", nodemap, "BalanceWhiteAuto");
     declareGenICamParameter("camera_wb_ratio_red", nodemap, "BalanceRatio", "BalanceRatioSelector",
@@ -631,9 +636,13 @@ void GenICamDriver::configure()
   using namespace std::chrono_literals;
   pub_sub_timer = create_wall_timer(100ms, std::bind(&GenICamDriver::checkSubscriptions, this));
 
-  // register trigger service call
+  // register trigger service calls
 
-  trigger_service = create_service<rc_common_msgs::srv::Trigger>(
+  trigger_camera_service = create_service<rc_common_msgs::srv::Trigger>(
+    std::string(get_name()) + "/camera_acquisition_trigger",
+    std::bind(&GenICamDriver::triggerCameraAcquisition, this, _1, _2, _3));
+
+  trigger_depth_service = create_service<rc_common_msgs::srv::Trigger>(
     std::string(get_name()) + "/depth_acquisition_trigger",
     std::bind(&GenICamDriver::triggerDepthAcquisition, this, _1, _2, _3));
 }
@@ -644,7 +653,8 @@ void GenICamDriver::cleanup()
 
   // remove trigger service call
 
-  trigger_service.reset();
+  trigger_camera_service.reset();
+  trigger_depth_service.reset();
 
   // stop thread that checks for subscriptions
 
@@ -921,6 +931,46 @@ rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(
   }
 
   return ret;
+}
+
+void GenICamDriver::triggerCameraAcquisition(
+  const std::shared_ptr<rmw_request_id_t>,
+  const std::shared_ptr<rc_common_msgs::srv::Trigger::Request>,
+  std::shared_ptr<rc_common_msgs::srv::Trigger::Response> res)
+{
+  std::lock_guard<std::recursive_mutex> lock(param_mtx);
+
+  if (nodemap) {
+    std::string mode;
+    std::string source;
+
+    get_parameter("trigger_mode", mode);
+    get_parameter("trigger_source", source);
+
+    if (mode == "On" && source == "Software") {
+      try {
+        RCLCPP_DEBUG(this->get_logger(), "Triggering camera images");
+
+        rcg::callCommand(nodemap, "TriggerSoftware", true);
+
+        res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::SUCCESS;
+        res->return_code.message = "Camera was triggered.";
+      } catch (const std::exception & ex) {
+        res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::INTERNAL_ERROR;
+        res->return_code.message = ex.what();
+        RCLCPP_ERROR(this->get_logger(), ex.what());
+      }
+    } else {
+      res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::NOT_APPLICABLE;
+      res->return_code.message =
+        "Triggering camera images is only possible if trigger_mode is on and trigger_source "
+        "is software!";
+      RCLCPP_DEBUG(this->get_logger(), "%s", res->return_code.message.c_str());
+    }
+  } else {
+    res->return_code.value = rc_common_msgs::msg::ReturnCodeConstants::NOT_APPLICABLE;
+    res->return_code.message = "Not connected";
+  }
 }
 
 void GenICamDriver::triggerDepthAcquisition(

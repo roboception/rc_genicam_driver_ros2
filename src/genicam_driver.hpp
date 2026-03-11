@@ -86,6 +86,11 @@ private:
   rcl_interfaces::msg::SetParametersResult paramCallback(
     const std::vector<rclcpp::Parameter> & params);
 
+  void triggerCameraAcquisition(
+    const std::shared_ptr<rmw_request_id_t>,
+    const std::shared_ptr<rc_common_msgs::srv::Trigger::Request>,
+    std::shared_ptr<rc_common_msgs::srv::Trigger::Response> res);
+
   void triggerDepthAcquisition(
     const std::shared_ptr<rmw_request_id_t>,
     const std::shared_ptr<rc_common_msgs::srv::Trigger::Request>,
@@ -119,7 +124,8 @@ private:
   std::vector<std::shared_ptr<GenICam2RosPublisher>> pub;
   rclcpp::TimerBase::SharedPtr pub_sub_timer;
 
-  rclcpp::Service<rc_common_msgs::srv::Trigger>::SharedPtr trigger_service;
+  rclcpp::Service<rc_common_msgs::srv::Trigger>::SharedPtr trigger_camera_service;
+  rclcpp::Service<rc_common_msgs::srv::Trigger>::SharedPtr trigger_depth_service;
 
   bool iocontrol_avail;
   std::string remote_out1_mode;

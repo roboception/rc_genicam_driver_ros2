@@ -675,6 +675,9 @@ void GenICamDriver::cleanup()
 
   // undeclare all parameters
 
+  undeclare_parameter("camera_exp_control");
+  undeclare_parameter("camera_exp_auto_mode");
+
   for (std::map<std::string, std::string>::iterator it = param.begin(); it != param.end(); ++it) {
     try {
       undeclare_parameter(it->first);

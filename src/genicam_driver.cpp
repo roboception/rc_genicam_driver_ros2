@@ -675,8 +675,17 @@ void GenICamDriver::cleanup()
 
   // undeclare all parameters
 
-  undeclare_parameter("camera_exp_control");
-  undeclare_parameter("camera_exp_auto_mode");
+  try {
+    undeclare_parameter("camera_exp_control");
+  } catch (const rclcpp::exceptions::ParameterNotDeclaredException & ex) {
+    RCLCPP_WARN_STREAM(this->get_logger(), "Cannot remove parameter: " << ex.what());
+  }
+
+  try {
+    undeclare_parameter("camera_exp_auto_mode");
+  } catch (const rclcpp::exceptions::ParameterNotDeclaredException & ex) {
+    RCLCPP_WARN_STREAM(this->get_logger(), "Cannot remove parameter: " << ex.what());
+  }
 
   for (std::map<std::string, std::string>::iterator it = param.begin(); it != param.end(); ++it) {
     try {

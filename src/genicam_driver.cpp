@@ -935,7 +935,6 @@ rcl_interfaces::msg::SetParametersResult GenICamDriver::paramCallback(
     } catch (const std::out_of_range &ex) {
       // permitted as this callback may also be called by parameters that we do
       // not manage ourselves
-      RCLCPP_WARN(this->get_logger(), ex.what());
     } catch (const std::exception & ex) {
       // permit this to make it more robust, but report that something went wrong
       RCLCPP_WARN(this->get_logger(), ex.what());
@@ -956,8 +955,8 @@ void GenICamDriver::triggerCameraAcquisition(
     std::string mode;
     std::string source;
 
-    get_parameter("trigger_mode", mode);
-    get_parameter("trigger_source", source);
+    get_parameter("camera_trigger_mode", mode);
+    get_parameter("camera_trigger_source", source);
 
     if (mode == "On" && source == "Software") {
       try {

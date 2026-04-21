@@ -1,3 +1,8 @@
+0.4.1 (2026-04-21)
+------------------
+
+* Added possibility to specify initial GenICam parameters that are applied before streaming starts
+
 0.4.0 (2026-03-12)
 ------------------
 

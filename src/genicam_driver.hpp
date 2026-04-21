@@ -78,6 +78,8 @@ private:
     const std::string & selector_name, const std::string & selector_value,
     const char *description=0, double float_scale=1.0);
 
+  void applyParameters(const std::shared_ptr<GenApi::CNodeMapRef> &nodemap,
+    const std::string& parameters);
   void configure();
   void cleanup();
   void updateSubscriptions(bool force);

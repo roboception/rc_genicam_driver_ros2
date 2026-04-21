@@ -105,6 +105,14 @@ GenICamDriver::GenICamDriver(const rclcpp::NodeOptions & options)
 
   declare_parameter("device", std::string("*"), device_descr);
 
+  rcl_interfaces::msg::ParameterDescriptor init_params_descr;
+  init_params_descr.description = "Space separated list of GenICam parameters that are applied on startup in the given order";
+  device_descr.additional_constraints = "(<name>[=<value>] )*";
+  device_descr.read_only = true;
+  device_descr.dynamic_typing = true; // Without this, undeclare_parameter() throws in Galactic onward.
+
+  declare_parameter("init_params", std::string(""), init_params_descr);
+
   // add callbacks for diagnostics publishing
 
   updater.add("Connection", this, &GenICamDriver::publishConnectionDiagnostics);
@@ -374,6 +382,65 @@ bool GenICamDriver::declareGenICamParameter(
   return ret;
 }
 
+/**
+ * Expect one or more GenICam parameter name and values in the format
+ * <name>[=<value>], which must not contain a white space, separated by white
+ * spaces and applies them to the given nodemap.
+ *
+ * An expection is thrown in case of an error. Execution stops on the first
+ * error.
+ */
+
+void GenICamDriver::applyParameters(const std::shared_ptr<GenApi::CNodeMapRef> &nodemap,
+  const std::string& parameters)
+{
+  size_t i = 0;
+
+  while (i < parameters.size())
+  {
+    // eat all white spaces
+
+    while (i < parameters.size() && std::isspace(parameters[i]))
+      i++;
+
+    // skip comments which start with # and end by \n
+
+    if (i < parameters.size() && parameters[i] == '#')
+    {
+      while (i < parameters.size() && parameters[i] != '\n')
+        i++;
+    }
+    else
+    {
+      size_t k = i;
+      while (k < parameters.size() && !std::isspace(parameters[k]))
+        k++;
+
+      size_t j = parameters.find('=', i);
+
+      if (j <= k)
+      {
+        std::string name = parameters.substr(i, j - i);
+        std::string value = parameters.substr(j + 1, k - j - 1);
+
+        RCLCPP_INFO_STREAM(this->get_logger(), "Setting: " << name << "=" << value);
+
+        rcg::setString(nodemap, name.c_str(), value.c_str(), true);
+      }
+      else if (i < k)
+      {
+        std::string name = parameters.substr(i, k - i);
+
+        RCLCPP_INFO_STREAM(this->get_logger(), "Calling: " << name);
+
+        rcg::callCommand(nodemap, name.c_str(), true);
+      }
+
+      i = k;
+    }
+  }
+}
+
 void GenICamDriver::configure()
 {
   using namespace std::placeholders;
@@ -437,6 +504,16 @@ void GenICamDriver::configure()
 
   {
     std::lock_guard<std::recursive_mutex> lock(updater_mtx);
+
+    // load initial configuration
+
+    std::string init_params;
+    get_parameter("init_params", init_params);
+
+    if (init_params.size() > 0)
+    {
+      applyParameters(nodemap, init_params);
+    }
 
     // get serial number and IP
 

@@ -63,6 +63,8 @@ Parameters to be set to the ROS param server before run-time.
   By default this parameter is set to `*`, which works with if only one
   compatible device can be found on the network.
 
+* `init_params`: List of initial GenICam parameters, separated by white space.
+
 #### At runtime changeable parameters
 
 These parameters can be changed during runtime. Parameters will not be declared

@@ -62,11 +62,11 @@ ImagePublisher::ImagePublisher(
     name = name + "_color";
   }
 
-  pub = image_transport::create_publisher(node, name);
+  pub = createImagePublisher(node, name);
 
   if (out1_filter) {
-    pub_out1_low = image_transport::create_publisher(node, name + "_out1_low");
-    pub_out1_high = image_transport::create_publisher(node, name + "_out1_high");
+    pub_out1_low = createImagePublisher(node, name + "_out1_low");
+    pub_out1_high = createImagePublisher(node, name + "_out1_high");
   }
 }
 

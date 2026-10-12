@@ -63,6 +63,10 @@ target_link_libraries(${LIB_NAME} PUBLIC
   ${rc_common_msgs_TARGETS}
 )
 
+if(image_transport_VERSION VERSION_GREATER_EQUAL 6.4.0)
+  target_compile_definitions(${LIB_NAME} PRIVATE IMAGE_TRANSPORT_HAS_NODE_INTERFACES)
+endif()
+
 add_executable(${NODE_NAME}
   src/genicam_driver_main.cpp
 )

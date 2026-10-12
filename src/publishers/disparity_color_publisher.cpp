@@ -46,7 +46,7 @@ namespace rc
 DisparityColorPublisher::DisparityColorPublisher(rclcpp::Node * node, const std::string & frame_id)
 : GenICam2RosPublisher(frame_id)
 {
-  pub = image_transport::create_publisher(node, "stereo/disparity_color");
+  pub = createImagePublisher(node, "stereo/disparity_color");
 }
 
 bool DisparityColorPublisher::used()

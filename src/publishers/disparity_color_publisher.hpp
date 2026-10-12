@@ -37,7 +37,7 @@
 #include "genicam2ros_publisher.hpp"
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.hpp>
+#include "image_transport_compat.hpp"
 #include <sensor_msgs/msg/image.hpp>
 
 namespace rc

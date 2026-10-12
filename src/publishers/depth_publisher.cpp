@@ -44,7 +44,7 @@ namespace rc
 DepthPublisher::DepthPublisher(rclcpp::Node * node, const std::string & frame_id)
 : GenICam2RosPublisher(frame_id)
 {
-  pub = image_transport::create_publisher(node, "stereo/depth");
+  pub = createImagePublisher(node, "stereo/depth");
 }
 
 bool DepthPublisher::used()

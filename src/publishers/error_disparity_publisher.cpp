@@ -43,7 +43,7 @@ namespace rc
 ErrorDisparityPublisher::ErrorDisparityPublisher(rclcpp::Node * node, const std::string & frame_id)
 : GenICam2RosPublisher(frame_id)
 {
-  pub = image_transport::create_publisher(node, "stereo/error_disparity");
+  pub = createImagePublisher(node, "stereo/error_disparity");
 }
 
 bool ErrorDisparityPublisher::used()

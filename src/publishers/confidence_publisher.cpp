@@ -43,7 +43,7 @@ namespace rc
 ConfidencePublisher::ConfidencePublisher(rclcpp::Node * node, const std::string & frame_id)
 : GenICam2RosPublisher(frame_id)
 {
-  pub = image_transport::create_publisher(node, "stereo/confidence");
+  pub = createImagePublisher(node, "stereo/confidence");
 }
 
 bool ConfidencePublisher::used()

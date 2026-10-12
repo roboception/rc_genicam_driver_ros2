@@ -50,7 +50,7 @@ ErrorDepthPublisher::ErrorDepthPublisher(rclcpp::Node * _node, const std::string
   scale = 1;
 
   node = _node;
-  pub = image_transport::create_publisher(node, "stereo/error_depth");
+  pub = createImagePublisher(node, "stereo/error_depth");
 }
 
 bool ErrorDepthPublisher::used()

@@ -32,12 +32,12 @@
  */
 
 #ifndef RC_ERRORDEPTHPUBLISHER_H
-#define RC_ERROREPTHPUBLISHER_H
+#define RC_ERRORDEPTHPUBLISHER_H
 
 #include "genicam2ros_publisher.hpp"
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.hpp>
+#include "image_transport_compat.hpp"
 #include <sensor_msgs/msg/image.hpp>
 
 #include <rc_genicam_api/imagelist.h>

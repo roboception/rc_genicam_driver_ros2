@@ -54,6 +54,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <chrono>
+#include <cmath>
 #include <unistd.h>
 
 #include <rc_common_msgs/msg/return_code_constants.hpp>
